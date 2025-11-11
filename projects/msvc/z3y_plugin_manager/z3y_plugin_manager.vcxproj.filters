@@ -45,6 +45,15 @@
     <ClInclude Include="..\..\..\framework\framework_events.h">
       <Filter>framework</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\framework\connection_type.h">
+      <Filter>framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\framework\z3y_framework.h">
+      <Filter>framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\framework\z3y_plugin_sdk.h">
+      <Filter>framework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\src\z3y_plugin_manager\readme.txt">
@@ -59,6 +68,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\z3y_plugin_manager\event_bus_impl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\z3y_plugin_manager\platform_posix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

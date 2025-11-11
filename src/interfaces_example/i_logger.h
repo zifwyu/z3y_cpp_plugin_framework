@@ -6,12 +6,20 @@
  *
  * @details
  * 这是一个纯粹的业务接口，它将被实现为一个“单例服务”。
+ *
+ * [重构 v5.1 - Bug 修复]
+ * 1. `ILogger`
+ * 现在继承 `public virtual IComponent`。
+ * 2.
+ * 这是为了配合 `PluginImpl`
+ * 解决“钻石继承”
+ * 歧义 (C2594)。
  */
 
 #ifndef Z3Y_SRC_INTERFACES_EXAMPLE_I_LOGGER_H_
 #define Z3Y_SRC_INTERFACES_EXAMPLE_I_LOGGER_H_
 
-#include "framework/i_component.h"
+#include "framework/i_component.h" //
 #include <string>
 
 namespace z3y
@@ -20,9 +28,17 @@ namespace z3y
      * @class ILogger
      * @brief 一个简单的单例日志服务接口。
      *
-     * 继承自 z3y::IComponent 以便能被框架管理。
+     * @design
+     * [Fix]
+     * 必须使用 `public virtual IComponent`
+     * 继承，
+     * 以防止 `LoggerService`
+     * 等实现类
+     * 出现 `IComponent`
+     * 的歧义。
      */
-    class ILogger : public IComponent
+    class ILogger : public virtual IComponent // <-- [THE FIX] 
+        //      添加 virtual
     {
     public:
         /**

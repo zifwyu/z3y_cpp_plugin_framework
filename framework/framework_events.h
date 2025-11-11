@@ -4,9 +4,9 @@
  * @author 孙鹏宇
  * @date 2025-11-10
  *
- * [已修正]：
- * 1. ComponentRegisterEvent 现在包含 is_singleton 成员，
- * 以便日志记录器可以区分组件和服务。
+ * @details
+ * 宿主程序可以订阅这些事件，以实时监控插件的加载和注册过程。
+ * [已重构]：新增了 AsyncExceptionEvent。
  */
 
 #pragma once
@@ -60,20 +60,41 @@ namespace z3y
         /**
          * @struct ComponentRegisterEvent
          * @brief 当一个组件/服务被成功注册时触发。
-         * [已修正]：新增了 is_singleton 成员。
          */
         struct ComponentRegisterEvent : public Event
         {
             ClassID clsid;               //!< 注册的 ClassID (uint64_t)
             std::string alias;           //!< 注册的字符串别名 (如果有)
             std::string plugin_path;     //!< 此组件来自哪个 DLL
-            bool is_singleton;           //!< [新增] 是单例服务 (true) 还是普通组件 (false)
+            bool is_singleton;           //!< 是单例服务 (true) 还是普通组件 (false)
 
             /**
              * @brief 构造函数
              */
             ComponentRegisterEvent(ClassID id, std::string a, std::string path, bool singleton)
                 : clsid(id), alias(std::move(a)), plugin_path(std::move(path)), is_singleton(singleton)
+            {
+            }
+        };
+
+        /**
+         * @struct AsyncExceptionEvent
+         * @brief [新增] 当一个 kQueued 订阅的回调函数抛出异常时触发。
+         *
+         * @design
+         * 此事件用于解决“被吞噬的异常”问题。
+         * EventLoop 会捕获异步异常，并 *立即* (kDirect)
+         * 发布此事件，以便核心日志服务可以记录它。
+         */
+        struct AsyncExceptionEvent : public Event
+        {
+            std::string exception_what; //!< e.what() 捕获到的异常信息
+
+            /**
+             * @brief 构造函数
+             */
+            explicit AsyncExceptionEvent(std::string what)
+                : exception_what(std::move(what))
             {
             }
         };

@@ -4,9 +4,23 @@
  * @author 孙鹏宇
  * @date 2025-11-10
  *
- * [已修正]：
- * 1. IPluginRegistry::RegisterComponent 的签名已更新。
- * 2. 移除了 IPluginRegistry::RegisterAlias。
+ * [重构 v2 - Fix 1] (死锁修复):
+ * 1. event_mutex_ 已被替换为 std::recursive_mutex，
+ * 以防止 kDirect 事件回调重入。
+ *
+ * [重构 v2 - Fix 4] (性能优化):
+ * 1. 增加了 global_sub_lookup_ 和 sender_sub_lookup_
+ * 两个反向查找表，用于优化 Unsubscribe()。
+ *
+ * [重构 v3 - Fix 5] (泄漏修复 + 易用性):
+ * 1. 移除了 v2 的 RAII 句柄方案 (易用性差)。
+ * 2. 恢复使用 weak_ptr 自动管理生命周期。
+ * 3. 增加了 gc_queue_ (异步垃圾回收队列)。
+ * 4. CleanupExpiredSubscriptions 会将失效的 weak_ptr
+ * 推入 gc_queue_。
+ * 5. EventLoop 线程会异步消耗此队列，
+ * 并安全地清理反向查找表，
+ * 从而在不牺牲性能和易用性的前提下解决内存泄漏。
  */
 
 #pragma once
@@ -14,18 +28,25 @@
 #ifndef Z3Y_SRC_PLUGIN_MANAGER_PLUGIN_MANAGER_H_
 #define Z3Y_SRC_PLUGIN_MANAGER_PLUGIN_MANAGER_H_
 
+ // 包含所有框架接口
 #include "framework/i_plugin_registry.h"
 #include "framework/i_event_bus.h"
 #include "framework/plugin_impl.h"
 #include "framework/plugin_cast.h"
 #include "framework/framework_events.h"
 
+// 包含 C++ StdLib
 #include <filesystem>
 #include <string>
 #include <vector>
 #include <map>
 #include <mutex>
 #include <memory>
+#include <thread>
+#include <queue>
+#include <condition_variable>
+#include <set>
+#include <typeindex>
 
 namespace z3y
 {
@@ -55,16 +76,10 @@ namespace z3y
 
         // --- 供宿主程序(Host)调用的公共 API ---
 
-        /**
-         * @brief 扫描指定目录(及其子目录)并加载所有插件。
-         */
         void LoadPluginsFromDirectory(
             const std::filesystem::path& dir,
             const std::string& init_func_name = "z3yPluginInit");
 
-        /**
-         * @brief 卸载所有已加载的插件并清空所有注册表。
-         */
         void UnloadAllPlugins();
 
         /**
@@ -73,10 +88,9 @@ namespace z3y
         template <typename T>
         PluginPtr<T> CreateInstance(const ClassID& clsid)
         {
-            // ... (实现保持不变) ...
             FactoryFunction factory;
             {
-                std::lock_guard<std::mutex> lock(mutex_);
+                std::lock_guard<std::mutex> lock(registry_mutex_);
                 auto it = factories_.find(clsid);
                 if (it == factories_.end() || it->second.is_singleton)
                 {
@@ -94,13 +108,14 @@ namespace z3y
         template <typename T>
         PluginPtr<T> GetService(const ClassID& clsid)
         {
-            // ... (实现保持不变) ...
-            std::lock_guard<std::mutex> lock(mutex_);
+            std::lock_guard<std::mutex> lock(registry_mutex_);
+
             auto it_factory = factories_.find(clsid);
             if (it_factory == factories_.end() || !it_factory->second.is_singleton)
             {
                 return nullptr;
             }
+
             auto it_inst = singletons_.find(clsid);
             if (it_inst != singletons_.end())
             {
@@ -109,6 +124,7 @@ namespace z3y
                     return PluginCast<T>(locked_ptr);
                 }
             }
+
             auto base_obj = it_factory->second.factory();
             if (base_obj)
             {
@@ -143,38 +159,49 @@ namespace z3y
         PluginManager();
 
         // --- IPluginRegistry 接口实现 ---
-
-        /**
-         * @brief [IPluginRegistry 接口实现] 注册一个组件类。
-         * [已修正]：签名已更新，包含了 alias。
-         */
         void RegisterComponent(ClassID clsid,
             FactoryFunction factory,
             bool is_singleton,
             const std::string& alias) override;
 
-        // [已移除] RegisterAlias 接口
-
-        // --- IEventBus 接口实现 (声明保持不变) ---
+        // --- IEventBus 接口实现 ---
         void Unsubscribe(std::shared_ptr<void> subscriber) override;
-        void UnregisterSender(void* sender) override;
+
+        /** @internal */
         void SubscribeGlobalImpl(std::type_index type,
             std::weak_ptr<void> sub,
-            std::function<void(const Event&)> cb) override;
-        void FireGlobalImpl(std::type_index type, const Event& e) override;
-        void SubscribeToSenderImpl(void* sender,
+            std::function<void(const Event&)> cb,
+            ConnectionType connection_type) override;
+        /** @internal */
+        void FireGlobalImpl(std::type_index type, PluginPtr<Event> e_ptr) override;
+
+        /** @internal */
+        void SubscribeToSenderImpl(void* sender_key,
             std::type_index type,
-            std::weak_ptr<void> sub,
-            std::function<void(const Event&)> cb) override;
-        void FireToSenderImpl(void* sender,
+            std::weak_ptr<void> sub_id,
+            std::weak_ptr<void> sender_id,
+            std::function<void(const Event&)> cb,
+            ConnectionType connection_type) override;
+
+        /** @internal */
+        void FireToSenderImpl(void* sender_key,
             std::type_index type,
-            const Event& e) override;
+            PluginPtr<Event> e_ptr) override;
 
     private:
         /**
          * @brief [内部] 通过别名查找 ClassID。
          */
         ClassID GetClsidFromAlias(const std::string& alias);
+
+        /**
+         * @brief [内部] 事件循环工作线程的主函数。
+         *
+         * [Fix 5] (重构):
+         * 此函数现在还负责处理 gc_queue_，
+         * 异步清理反向查找表。
+         */
+        void EventLoop();
 
         using LibHandle = void*;
 
@@ -186,27 +213,111 @@ namespace z3y
 
         struct Subscription
         {
-            std::weak_ptr<void> subscriber_id;
-            std::function<void(const Event&)> callback;
+            std::weak_ptr<void> subscriber_id_;
+            std::weak_ptr<void> sender_id_;
+            std::function<void(const Event&)> callback_;
+            ConnectionType connection_type_;
         };
 
         /**
          * @brief [辅助函数] 清理已失效的(expired)订阅者 (weak_ptr)。
+         *
+         * [Fix 5] (重构):
+         * 此函数现在会将在正向列表中
+         * 发现的失效 weak_ptr
+         * 放入 gc_queue_ 中，
+         * 以便 EventLoop 稍后清理反向查找表。
+         *
+         * @param[in,out] subs 要清理的订阅列表 (vector)。
+         * @param[in] check_sender_also 是否也检查 sender_id_ 的有效性。
+         * @param[in,out] gc_queue [Fix 5]
+         * 用于暂存失效 weak_ptr 的 GC 队列。
          */
-        static void CleanupExpiredSubscriptions(std::vector<Subscription>& subs);
+        static void CleanupExpiredSubscriptions(
+            std::vector<Subscription>& subs,
+            bool check_sender_also,
+            std::queue<std::weak_ptr<void>>& gc_queue // [Fix 5] 新增参数
+        );
 
-        std::mutex mutex_;
+        using EventCallbackList = std::vector<Subscription>;
+        using EventMap = std::map<std::type_index, EventCallbackList>;
+        using SenderMap = std::map<void*, EventMap>;
+        using EventTask = std::function<void()>;
+
+
+        // --- [Fix 4] Unsubscribe 性能优化：反向查找表 ---
+
+        /**
+         * @brief [Fix 4] 全局事件反向查找表。
+         * Key: 订阅者 (weak_ptr)。
+         * Value: 该订阅者订阅的所有全局事件的 type_index 集合。
+         */
+        using SubscriberLookupMapG = std::map<
+            std::weak_ptr<void>,
+            std::set<std::type_index>,
+            std::owner_less<std::weak_ptr<void>>
+        >;
+
+        /**
+         * @brief [Fix 4] 实例事件反向查找表。
+         * Key: 订阅者 (weak_ptr)。
+         * Value: 该订阅者订阅的所有实例事件的 (sender_key, type_index) 对的集合。
+         */
+        using SubscriberLookupMapS = std::map<
+            std::weak_ptr<void>,
+            std::set<std::pair<void*, std::type_index>>,
+            std::owner_less<std::weak_ptr<void>>
+        >;
+
+
+        // --- 核心成员变量 (组件注册) ---
+        std::mutex registry_mutex_;
         std::map<ClassID, FactoryInfo> factories_;
         std::map<ClassID, std::weak_ptr<IComponent>> singletons_;
-        std::map<std::type_index, std::vector<Subscription>> global_subscribers_;
-        std::map<void*, std::map<std::type_index, std::vector<Subscription>>> sender_subscribers_;
         std::vector<LibHandle> loaded_libs_;
-
-        //! 别名表: 存储 "string" 到 ClassID 的映射
         std::map<std::string, ClassID> alias_map_;
-
-        //! 用于在加载期间传递上下文给 RegisterComponent
         std::string current_loading_plugin_path_;
+
+        // --- 事件总线成员 ---
+
+        /**
+         * @brief [Fix 1] 保护事件总线订阅表 (使用递归锁)。
+         *
+         * 保护:
+         * 1. global_subscribers_
+         * 2. sender_subscribers_
+         * 3. global_sub_lookup_ [Fix 4]
+         * 4. sender_sub_lookup_ [Fix 4]
+         * 5. gc_queue_ [Fix 5]
+         */
+        std::recursive_mutex event_mutex_;
+        EventMap global_subscribers_;
+        SenderMap sender_subscribers_;
+
+        // [Fix 4] Unsubscribe 优化查找表
+        SubscriberLookupMapG global_sub_lookup_;
+        SubscriberLookupMapS sender_sub_lookup_;
+
+
+        // --- 异步事件总线成员 ---
+        std::thread event_loop_thread_;
+        std::queue<EventTask> event_queue_;
+        std::mutex queue_mutex_; //!< 保护 event_queue_ 和 running_ 标志
+        std::condition_variable queue_cv_;
+        bool running_;
+
+        /**
+         * @brief [Fix 5] 异步垃圾回收队列。
+         *
+         * CleanupExpiredSubscriptions 会向此队列
+         * push 失效的 weak_ptr。
+         * EventLoop 线程会从此队列 pop
+         * 并清理反向查找表。
+         *
+         * @design
+         * 此队列由 event_mutex_ (递归锁) 保护。
+         */
+        std::queue<std::weak_ptr<void>> gc_queue_;
     };
 
 } // namespace z3y

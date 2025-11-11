@@ -6,7 +6,14 @@
  *
  * @details
  * 这是一个纯粹的业务接口，演示了框架的用法。
- * 它不包含任何实现类的 ClassID，以保持接口和实现的分离。
+ *
+ * [重构 v5.1 - Bug 修复]
+ * 1. `ISimple`
+ * 现在继承 `public virtual IComponent`。
+ * 2.
+ * 这是为了配合 `PluginImpl`
+ * 解决“钻石继承”
+ * 歧义 (C2594)。
  */
 
 #ifndef Z3Y_SRC_INTERFACES_EXAMPLE_I_SIMPLE_H_
@@ -21,9 +28,17 @@ namespace z3y
      * @class ISimple
      * @brief 一个简单的示例接口。
      *
-     * 所有接口都必须公有继承 z3y::IComponent。
+     * @design
+     * [Fix]
+     * 必须使用 `public virtual IComponent`
+     * 继承，
+     * 以防止 `SimpleImplA`
+     * 等实现类
+     * 出现 `IComponent`
+     * 的歧义。
      */
-    class ISimple : public IComponent
+    class ISimple : public virtual IComponent // <-- [THE FIX] 
+        //      添加 virtual
     {
     public:
         /**

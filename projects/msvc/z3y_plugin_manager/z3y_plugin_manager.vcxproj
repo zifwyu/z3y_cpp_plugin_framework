@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\framework\class_id.h" />
+    <ClInclude Include="..\..\..\framework\connection_type.h" />
     <ClInclude Include="..\..\..\framework\framework_events.h" />
     <ClInclude Include="..\..\..\framework\i_component.h" />
     <ClInclude Include="..\..\..\framework\i_event_bus.h" />
@@ -27,6 +28,8 @@
     <ClInclude Include="..\..\..\framework\plugin_cast.h" />
     <ClInclude Include="..\..\..\framework\plugin_impl.h" />
     <ClInclude Include="..\..\..\framework\plugin_registration.h" />
+    <ClInclude Include="..\..\..\framework\z3y_framework.h" />
+    <ClInclude Include="..\..\..\framework\z3y_plugin_sdk.h" />
     <ClInclude Include="..\..\..\src\z3y_plugin_manager\plugin_manager.h" />
   </ItemGroup>
   <ItemGroup>
@@ -34,6 +37,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\z3y_plugin_manager\event_bus_impl.cpp" />
+    <ClCompile Include="..\..\..\src\z3y_plugin_manager\platform_posix.cpp" />
     <ClCompile Include="..\..\..\src\z3y_plugin_manager\platform_win.cpp" />
     <ClCompile Include="..\..\..\src\z3y_plugin_manager\plugin_manager.cpp" />
   </ItemGroup>
