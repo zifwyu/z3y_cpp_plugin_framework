@@ -4,13 +4,17 @@
  * @author 孙鹏宇
  * @date 2025-11-10
  *
- * ...
  * [修改]
  * 1.
  * 遵从 Google 命名约定
  * 2.
  * 使用 Z3Y_DEFINE_INTERFACE
- * 宏
+ * 宏 (
+ * 版本 1.0)
+ * 3. [修改]
+ * QueryInterfaceRaw
+ * 签名已更改为接受 (iid, major,
+ * minor)
  */
 
 #pragma once
@@ -41,9 +45,12 @@ namespace z3y {
         /**
          * @brief [修改]
          * 使用 Z3Y_DEFINE_INTERFACE
-         * 宏
+         * 宏 (
+         * 定义为 1.0
+         * 版本)
          */
-        Z3Y_DEFINE_INTERFACE(IComponent, "z3y-core-IComponent-IID-A0000001")
+        Z3Y_DEFINE_INTERFACE(IComponent, "z3y-core-IComponent-IID-A0000001", \
+            1, 0)
 
             /**
              * @brief 虚析构函数（默认实现）。
@@ -54,10 +61,13 @@ namespace z3y {
          * @brief [核心] 手动运行时类型识别（RTTI）的查询函数（纯虚函数）。
          *
          * [修改]
-         * 参数从 ClassId
-         * 更改为 InterfaceId
+         * 签名已更改，
+         * 以接受 Major
+         * 和 Minor
+         * 版本号
          */
-        virtual void* QueryInterfaceRaw(InterfaceId iid) = 0;
+        virtual void* QueryInterfaceRaw(InterfaceId iid, uint32_t major,
+            uint32_t minor) = 0;
     };
 
 

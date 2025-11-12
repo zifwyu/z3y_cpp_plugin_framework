@@ -4,7 +4,6 @@
  * @author 孙鹏宇
  * @date 2025-11-10
  *
- * ...
  * [修改]
  * 1.
  * 遵从 Google 命名约定
@@ -12,7 +11,8 @@
  * 修正 SubscribeGlobal / SubscribeToSender
  * 3. [修改]
  * 使用 Z3Y_DEFINE_INTERFACE
- * 宏
+ * 宏 (
+ * 版本 1.0)
  */
 
 #pragma once
@@ -37,7 +37,7 @@ namespace z3y {
      */
     struct Event {
         /**
-         * @brief 虚析S构函数。
+         * @brief 虚析构函数。
          */
         virtual ~Event() = default;
     };
@@ -52,9 +52,12 @@ namespace z3y {
         /**
          * @brief [修改]
          * 使用 Z3Y_DEFINE_INTERFACE
-         * 宏
+         * 宏 (
+         * 定义为 1.0
+         * 版本)
          */
-        Z3Y_DEFINE_INTERFACE(IEventBus, "z3y-core-IEventBus-IID-A0000002")
+        Z3Y_DEFINE_INTERFACE(IEventBus, "z3y-core-IEventBus-IID-A0000002", \
+            1, 0)
 
             /**
              * @brief 虚析构函数。
@@ -77,7 +80,7 @@ namespace z3y {
                 TSubscriber>,
                 "Subscriber must inherit from std::enable_shared_from_this");
 
-            EventId event_id = TEvent::kEventId;  // [修改]
+            EventId event_id = TEvent::kEventId;
 
             std::weak_ptr<TSubscriber> weak_sub = subscriber;
 
@@ -107,7 +110,7 @@ namespace z3y {
 
             PluginPtr<Event> base_event = event_ptr;
 
-            FireGlobalImpl(TEvent::kEventId, base_event);  // [修改]
+            FireGlobalImpl(TEvent::kEventId, base_event);
         }
 
         // --- 2. 实例到实例 (Sender-Specific) ---
@@ -128,7 +131,7 @@ namespace z3y {
                 TSubscriber>,
                 "Subscriber must inherit from std::enable_shared_from_this");
 
-            EventId event_id = TEvent::kEventId;  // [修改]
+            EventId event_id = TEvent::kEventId;
 
             std::weak_ptr<TSubscriber> weak_sub = subscriber;
 
@@ -162,7 +165,7 @@ namespace z3y {
             PluginPtr<Event> base_event = event_ptr;
             void* sender_key = sender.get();
 
-            FireToSenderImpl(sender_key, TEvent::kEventId, base_event);  // [修改]
+            FireToSenderImpl(sender_key, TEvent::kEventId, base_event);
         }
 
         // --- 3. 手动生命周期管理 ---
@@ -175,26 +178,23 @@ namespace z3y {
     protected:
         /**
          * @internal
-         * [修改] 参数从 ClassId 更改为 EventId
          */
-        virtual void SubscribeGlobalImpl(EventId event_id,  // [修改]
+        virtual void SubscribeGlobalImpl(EventId event_id,
             std::weak_ptr<void> sub,
             std::function<void(const Event&)> cb,
             ConnectionType connection_type) = 0;
 
         /**
          * @internal
-         * [修改] 参数从 ClassId 更改为 EventId
          */
         virtual void FireGlobalImpl(EventId event_id,
-            PluginPtr<Event> e_ptr) = 0;  // [修改]
+            PluginPtr<Event> e_ptr) = 0;
 
         /**
          * @internal
-         * [修改] 参数从 ClassId 更改为 EventId
          */
         virtual void SubscribeToSenderImpl(void* sender_key,
-            EventId event_id,  // [修改]
+            EventId event_id,
             std::weak_ptr<void> sub_id,
             std::weak_ptr<void> sender_id,
             std::function<void(const Event&)> cb,
@@ -202,10 +202,9 @@ namespace z3y {
 
         /**
          * @internal
-         * [修改] 参数从 ClassId 更改为 EventId
          */
         virtual void FireToSenderImpl(void* sender_key,
-            EventId event_id,  // [修改]
+            EventId event_id,
             PluginPtr<Event> e_ptr) = 0;
     };
 
@@ -217,7 +216,7 @@ namespace z3y {
          * @brief [修改] 框架核心事件总线服务的 "服务ID"。
          * 宿主程序使用此 ID 来 GetService。
          */
-        constexpr ClassId kEventBus =  // [修改]
+        constexpr ClassId kEventBus =
             ConstexprHash("z3y-core-event-bus-SERVICE-UUID-D54E82F1");
     }  // namespace clsid
 

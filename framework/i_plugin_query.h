@@ -22,6 +22,10 @@
  * (已完成)
  * 增加 GetComponentDetailsByAlias
  * 接口
+ * 5. [修改] [!!]
+ * 新增 InterfaceVersion
+ * 结构体，
+ * 提升清晰度
  */
 
 #pragma once
@@ -47,6 +51,22 @@ namespace z3y {
     }  // namespace clsid
 
     /**
+     * @struct InterfaceVersion
+     * @brief [新]
+     * 用于清晰地封装接口的版本号。
+     */
+    struct InterfaceVersion {
+        uint32_t major;     //!< 接口主版本号
+        uint32_t minor;     //!< 接口次版本号
+        // 
+        // (
+        // 
+        // 
+        // )
+    };
+
+
+    /**
      * @struct InterfaceDetails
      * @brief [新]
      * 描述一个已注册接口的详细信息。
@@ -56,6 +76,13 @@ namespace z3y {
         std::string name;     //!< 
         //!< 接口的字符串名称 (
         //!< 例如 "ISimple")
+
+        /**
+         * @brief [修改]
+         * 插件实现的接口版本
+         * (vMajor.vMinor)
+         */
+        InterfaceVersion version;
     };
 
     /**
@@ -72,8 +99,10 @@ namespace z3y {
 
         /**
          * @brief [修改]
-         * 此组件实现的所有接口 (Id
-         * 和 Name)
+         * 此组件实现的所有接口 (Id,
+         * Name,
+         * * 和版本
+         * )
          * 列表
          */
         std::vector<InterfaceDetails> implemented_interfaces;
@@ -93,7 +122,8 @@ namespace z3y {
          * 使用 Z3Y_DEFINE_INTERFACE
          * 宏
          */
-        Z3Y_DEFINE_INTERFACE(IPluginQuery, "z3y-core-IPluginQuery-IID-A0000003")
+         // (已在上一轮修复)
+        Z3Y_DEFINE_INTERFACE(IPluginQuery, "z3y-core-IPluginQuery-IID-A0000003", 1, 0)
 
             /**
              * @brief 获取所有已注册组件的详细信息。

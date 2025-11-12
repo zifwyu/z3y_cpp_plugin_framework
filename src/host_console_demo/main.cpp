@@ -21,6 +21,13 @@
  * 更新 IPluginQuery
  * 的用法以打印
  * InterfaceDetails
+ * 10. [修改] [!!]
+ * 打印 InterfaceDetails
+ * 时，
+ * 包含版本号
+ * (
+ * 使用 iface.version.major
+ * )
  */
 
  // 1. 包含框架核心头文件
@@ -169,9 +176,15 @@ int main(int argc, char* argv[]) {
             // 并打印可读的
             // name
             for (const auto& iface : detail.implemented_interfaces) {
+                // [!! 修改 !!] 
+                // 打印版本号 (
+                // 访问 .version.major
+                // )
                 std::cout << "      - " << iface.name
                     << " (IID: 0x" << std::hex << iface.iid
-                    << std::dec << ")" << std::endl;
+                    << std::dec << ")"
+                    << " [v" << iface.version.major << "." << iface.version.minor << "]" // [新]
+                    << std::endl;
             }
         }
     }

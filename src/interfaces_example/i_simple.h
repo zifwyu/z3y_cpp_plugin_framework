@@ -7,7 +7,8 @@
  * [修改]
  * 1.
  * 使用 Z3Y_DEFINE_INTERFACE
- * 宏
+ * 宏 (
+ * 版本 1.0)
  * 2.
  * 添加 <string>
  * 3. [修改]
@@ -36,9 +37,12 @@ namespace z3y {
             /**
              * @brief [修改]
              * 使用 Z3Y_DEFINE_INTERFACE
-             * 宏
+             * 宏 (
+             * 定义为 1.0
+             * 版本)
              */
-            Z3Y_DEFINE_INTERFACE(ISimple, "z3y-example-ISimple-IID-A4736128")
+            Z3Y_DEFINE_INTERFACE(ISimple, "z3y-example-ISimple-IID-A4736128", \
+                1, 0)
 
                 /**
                  * @brief 获取一个示例字符串。

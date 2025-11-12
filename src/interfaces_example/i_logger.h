@@ -7,7 +7,8 @@
  * [修改]
  * 1.
  * 使用 Z3Y_DEFINE_INTERFACE
- * 宏
+ * 宏 (
+ * 版本 1.0)
  * 2.
  * 添加 <string>
  * 3. [修改]
@@ -36,9 +37,12 @@ namespace z3y {
             /**
              * @brief [修改]
              * 使用 Z3Y_DEFINE_INTERFACE
-             * 宏
+             * 宏 (
+             * 定义为 1.0
+             * 版本)
              */
-            Z3Y_DEFINE_INTERFACE(ILogger, "z3y-example-ILogger-IID-B1B542F8")
+            Z3Y_DEFINE_INTERFACE(ILogger, "z3y-example-ILogger-IID-B1B542F8", \
+                1, 0)
 
                 /**
                  * @brief 记录一条消息。

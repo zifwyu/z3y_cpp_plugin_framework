@@ -6,16 +6,28 @@
  *
  * ...
  * [修改]
- * 7. [修改] [!!]
- * CheckHasClsid
- * 已更新为 C++17
- * 兼容的 SFINAE
- * (std::void_t)
- * 8. [修改] [!!]
- * 移除了 'static constexpr ClassId kClsid =
- * ImplClass::kClsid;'
- * (这是 C2039
- * 错误的根源)
+ * ...
+ * 9. [修改] [!!]
+ * QueryInterfaceRaw
+ * 和 QueryRecursive
+ * 已更新为
+ * (iid, major, minor)
+ * 签名
+ * 10. [修改] [!!]
+ * QueryRecursive
+ * 实现了 SemVer
+ * 检查逻辑
+ * (plugin_major == host_major &&
+ * plugin_minor >= host_minor)
+ * 11. [修改] [!!]
+ * GetInterfaceDetails
+ * 和
+ * CollectDetailsRecursive
+ * 现在收集版本号
+ * (
+ * 使用 InterfaceVersion
+ * 结构体
+ * )。
  */
 
 #pragma once
@@ -43,31 +55,15 @@ namespace z3y {
      * 接口
      * (例如 ISimple, ISimple2)。
      */
-    template <typename ImplClass, typename... Interfaces> // [修改]
+    template <typename ImplClass, typename... Interfaces>
     class PluginImpl : public virtual IComponent,
         public std::enable_shared_from_this<ImplClass>,
         public virtual Interfaces...
     {
     public:
-        /**
-         * @brief [修改]
-         * 移除了 'static constexpr ClassId kClsid =
-         * ImplClass::kClsid;'
-         * * 这一行是导致 C2039/C2065
-         * 错误的原因，
-         * 因为 ImplClass
-         * 在基类实例化时
-         * 仍然是一个不完整类型。
-         *
-         * 框架的其他部分 (
-         * 如 plugin_registration.h)
-         * 已经直接从 ImplClass::kClsid
-         * 获取 ID，
-         * 所以 PluginImpl
-         * 自身不需要复制这个成员。
-         */
-         // static constexpr ClassId kClsid = ImplClass::kClsid; 
-         // <-- [已删除]
+
+        // Note: This is just a basic implementation. You might need to adjust it based on your actual needs.)
+        // static constexpr ClassId kClsid = ImplClass::kClsid;
 
     private:
         // --- 内部辅助模板 ---
@@ -92,21 +88,10 @@ namespace z3y {
          */
         template <typename T = ImplClass>
         static constexpr bool CheckHasClsid() {
-
-            // [修改] 
-            // 使用 C++17 
-            // 兼容的 SFINAE 
-            // 检查
             static_assert(has_kClsid<T>::value,
                 "ImplClass must define 'static constexpr z3y::ClassId "
                 "kClsid'. (Hint: Use Z3Y_DEFINE_COMPONENT_ID macro inside "
                 "your class)");
-
-            // 
-            // 检查 kClsid 
-            // 类型是否正确 (
-            // 仅在 kClsid 
-            // 存在时才检查)
             if constexpr (has_kClsid<T>::value) {
                 static_assert(
                     std::is_same_v<decltype(T::kClsid), const ClassId>,
@@ -119,8 +104,10 @@ namespace z3y {
 
         /**
          * @brief 编译期检查：
-         * 确保所有接口都继承自 IComponent
-         * 且定义了 kIid 和 kName。
+         * [修改]
+         * 检查 kVersionMajor
+         * 和 kVersionMinor
+         * 是否存在
          */
         template <typename First, typename... Rest>
         static constexpr bool AllDeriveFromIComponent() {
@@ -134,11 +121,21 @@ namespace z3y {
                 "Interface 'First' must define 'static constexpr "
                 "z3y::InterfaceId kIid'. (Hint: Use Z3Y_DEFINE_INTERFACE)");
 
-            // [新] 检查 kName
+            // 检查 kName
             static_assert(
                 std::is_same_v<decltype(First::kName), const char* const>,
                 "Interface 'First' must define 'static constexpr const "
                 "char* kName'. (Hint: Use Z3Y_DEFINE_INTERFACE)");
+
+            // [新] 检查版本
+            static_assert(
+                std::is_same_v<decltype(First::kVersionMajor), const uint32_t>,
+                "Interface 'First' must define 'static constexpr const "
+                "uint32_t kVersionMajor'. (Hint: Use Z3Y_DEFINE_INTERFACE)");
+            static_assert(
+                std::is_same_v<decltype(First::kVersionMinor), const uint32_t>,
+                "Interface 'First' must define 'static constexpr const "
+                "uint32_t kVersionMinor'. (Hint: Use Z3Y_DEFINE_INTERFACE)");
 
 
             if constexpr (sizeof...(Rest) > 0) {
@@ -148,19 +145,73 @@ namespace z3y {
         }
 
         /**
-         * @brief 编译期递归：
-         * QueryInterfaceRaw 的核心实现。
-         * (此函数不变,
-         * 仍然只依赖 kIid)
+         * @brief [修改]
+         * 编译期递归：
+         * QueryInterfaceRaw
+         * 的核心实现。
+         * [修改]
+         * 增加了 SemVer
+         * 检查逻辑。
+         *
+         * @param[in] iid
+         * 宿主想要的接口 ID。
+         * @param[in] host_major
+         * 宿主想要的 Major
+         * 版本。
+         * @param[in] host_minor
+         * 宿主想要的 Minor
+         * 版本。
          */
         template <typename First, typename... Rest>
-        void* QueryRecursive(InterfaceId iid) {
+        void* QueryRecursive(InterfaceId iid, uint32_t host_major,
+            uint32_t host_minor) {
+
             if (iid == First::kIid) {
+                // [!! 
+                // 
+                // 
+                // 
+                // 
+                // !!]
+                const uint32_t my_major = First::kVersionMajor;
+                const uint32_t my_minor = First::kVersionMinor;
+
+                // 1. 
+                //    
+                // 
+                //    
+                //    
+                //    (
+                //    宿主 2.0 
+                //    vs 
+                //    插件 1.x)
+                if (my_major != host_major) {
+                    return nullptr; // 
+                    // 
+                    // 
+                    // 
+                }
+
+                // 2. 
+                //    
+                // 
+                //    
+                //    
+                //    (
+                //    宿主 1.2 
+                //    vs 
+                //    插件 1.1)
+                if (my_minor < host_minor) {
+                    return nullptr; // 
+
+                }
+
+
                 return static_cast<First*>(static_cast<ImplClass*>(this));
             }
 
             if constexpr (sizeof...(Rest) > 0) {
-                return QueryRecursive<Rest...>(iid);
+                return QueryRecursive<Rest...>(iid, host_major, host_minor);
             }
 
             return nullptr;  // 遍历完毕，未找到
@@ -173,9 +224,18 @@ namespace z3y {
         template <typename First, typename... Rest>
         static void CollectDetailsRecursive(
             std::vector<InterfaceDetails>& details) {
-            // [修改] 
-            // 收集 kIid 和 kName
-            details.push_back(InterfaceDetails{ First::kIid, First::kName });
+
+            // [!! 修改 !!] 
+            // 填充 InterfaceVersion 结构体
+            details.push_back(InterfaceDetails{
+                First::kIid,
+                First::kName,
+                InterfaceVersion { // [新]
+                    First::kVersionMajor,
+                    First::kVersionMinor
+                }
+                });
+
             if constexpr (sizeof...(Rest) > 0) {
                 CollectDetailsRecursive<Rest...>(details);
             }
@@ -190,27 +250,32 @@ namespace z3y {
          * @param[in] iid
          * 要查询的接口 ID。
          */
-        void* QueryInterfaceRaw(InterfaceId iid) override {
-            // [修改] 
-            // 增加 kClsid 
-            // 检查
-            // 
-            // (
-            // 在函数调用时，
-            // ImplClass 
-            // 是完整类型，
-            // 可以安全检查
-            // )
+        void* QueryInterfaceRaw(InterfaceId iid, uint32_t major,
+            uint32_t minor) override { // [修改]
+
             [[maybe_unused]] constexpr bool check_clsid = CheckHasClsid();
             [[maybe_unused]] constexpr bool check_iids =
                 AllDeriveFromIComponent<Interfaces...>();
 
             if (iid == IComponent::kIid) {
-                return static_cast<IComponent*>(static_cast<ImplClass*>(this));
+
+                const uint32_t my_major = IComponent::kVersionMajor;
+                const uint32_t my_minor = IComponent::kVersionMinor;
+
+
+                if (my_major != major) {
+                    return nullptr;
+                }
+                if (my_minor < minor) {
+                    return nullptr;
+                }
+
+                return static_cast<IComponent*>(
+                    static_cast<ImplClass*>(this));
             }
 
             if constexpr (sizeof...(Interfaces) > 0) {
-                return QueryRecursive<Interfaces...>(iid);
+                return QueryRecursive<Interfaces...>(iid, major, minor);
             }
 
             return nullptr;
@@ -219,21 +284,27 @@ namespace z3y {
         /**
          * @brief [修改]
          * 静态函数，
-         * 返回此实现类实现的所有接口详情。
+         * ...
          */
         static std::vector<InterfaceDetails> GetInterfaceDetails() {
-            // [修改] 
-            // 增加 kClsid 
-            // 检查
+
             [[maybe_unused]] constexpr bool check_clsid = CheckHasClsid();
             [[maybe_unused]] constexpr bool check_iids =
                 AllDeriveFromIComponent<Interfaces...>();
 
             std::vector<InterfaceDetails> details;
 
-            // 添加 IComponent 自身
+            // [!! 修改 !!] 
+            // 添加 IComponent 自身 (包含版本)
             details.push_back(
-                InterfaceDetails{ IComponent::kIid, IComponent::kName });
+                InterfaceDetails{
+                    IComponent::kIid,
+                    IComponent::kName,
+                    InterfaceVersion { // [新]
+                        IComponent::kVersionMajor,
+                        IComponent::kVersionMinor
+                    }
+                });
 
             if constexpr (sizeof...(Interfaces) > 0) {
                 CollectDetailsRecursive<Interfaces...>(details);
