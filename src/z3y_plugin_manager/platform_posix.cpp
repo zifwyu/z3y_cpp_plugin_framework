@@ -4,21 +4,21 @@
  * @author 孙鹏宇 (Adapted for POSIX)
  * @date 2025-11-10
  *
- * @details
- * 1. 此文件是 platform_win.cpp 的 POSIX 对应物。
- * 2. 它使用 #!defined(_WIN32) 守卫，
- * 以确保它只在非 Windows 平台上编译。
- * 3. 它使用 dlopen, dlsym, 和 dlclose
- * 来实现动态库的加载和卸载。
- * 4. 它会查找 .so (Linux) 和 .dylib (macOS)
- * 文件，
- * 而不是 .dll 文件。
- * 5. LoadPluginsFromDirectory 和 UnloadAllPlugins
- * 的实现
- * (包括 Fix 2
- * 中的所有锁和队列清理逻辑)
- * 与 Windows 版本完全相同，
- * 只是它们调用的底层辅助函数不同。
+ * ... (原有的 v2 修复日志) ...
+ *
+ * [v2.3 修复] (API 重构):
+ * 1.
+ * LoadPluginsFromDirectory
+ * 被重构，
+ * 现在只负责遍历目录，
+ * 并调用 LoadPluginInternal。
+ * 2.
+ * 新增 LoadPlugin
+ * 接口。
+ * 3.
+ * 新增 LoadPluginInternal
+ * 辅助函数，
+ * 包含核心的加载和异常处理逻辑。
  */
 
  // 仅在非 Windows 平台上编译此文件
@@ -38,35 +38,22 @@ namespace z3y
     {
         /**
          * @brief [POSIX] 加载动态链接库 (.so / .dylib)。
-         * @param[in] path 库文件的路径。
-         * @return void* 库句柄，失败则返回 nullptr。
          */
         void* LoadDynamicLibrary(const std::filesystem::path& path)
         {
-            // dlopen 需要一个 C 风格字符串。
-            // RTLD_NOW: 立即解析所有符号。
-            // RTLD_LOCAL: 
-            //    使库中的符号不被
-            //    后续加载的库自动使用 
-            //    (良好的封装性)。
             return ::dlopen(path.string().c_str(), RTLD_NOW | RTLD_LOCAL);
         }
 
         /**
          * @brief [POSIX] 获取函数地址。
-         * @param[in] lib_handle 库句柄 (来自 dlopen)。
-         * @param[in] func_name 要查找的函数名 (C 风格字符串)。
-         * @return void* 函数指针，失败则返回 nullptr。
          */
         void* GetFunctionAddress(void* lib_handle, const char* func_name)
         {
-            // dlsym 返回一个 void* 指针
             return ::dlsym(lib_handle, func_name);
         }
 
         /**
          * @brief [POSIX] 卸载动态链接库。
-         * @param[in] lib_handle 库句柄。
          */
         void UnloadDynamicLibrary(void* lib_handle)
         {
@@ -75,8 +62,6 @@ namespace z3y
 
         /**
          * @brief 插件入口点函数的签名
-         * (与 platform_win.cpp
-         * 中定义的一致)。
          */
         using PluginInitFunc = void(IPluginRegistry*);
 
@@ -84,12 +69,13 @@ namespace z3y
 
 
     /**
-     * @brief 扫描指定目录(及其子目录)并加载所有插件。
-     *
+     * @brief [修改]
+     * 扫描指定目录(及其子目录)并加载所有插件。
      * (POSIX 平台实现)
      */
     void PluginManager::LoadPluginsFromDirectory(
         const std::filesystem::path& dir,
+        bool recursive,
         const std::string& init_func_name)
     {
         if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir))
@@ -97,124 +83,147 @@ namespace z3y
             return;
         }
 
-        PluginPtr<IEventBus> bus = GetService<IEventBus>(clsid::kEventBus);
-        std::string path_str;
-
-        // 递归遍历目录
-        for (const auto& entry : std::filesystem::recursive_directory_iterator(dir))
+        if (recursive)
         {
-            const auto extension = entry.path().extension();
-
-            // [POSIX 变更]：
-            // 查找 .so (Linux) 或 .dylib (macOS)
-            if (entry.is_regular_file() && (extension == ".so" || extension == ".dylib"))
+            // [修改] 接口 1: 递归扫描
+            for (const auto& entry : std::filesystem::recursive_directory_iterator(dir))
             {
-                path_str = entry.path().string();
+                LoadPluginInternal(entry.path(), init_func_name);
+            }
+        }
+        else
+        {
+            // [修改] 接口 2: 非递归扫描
+            for (const auto& entry : std::filesystem::directory_iterator(dir))
+            {
+                LoadPluginInternal(entry.path(), init_func_name);
+            }
+        }
+    }
 
-                // 1. 加载库
-                // (调用此文件中的 POSIX 辅助函数)
-                LibHandle lib_handle = LoadDynamicLibrary(entry.path());
-                if (!lib_handle)
-                {
-                    if (bus)
-                    {
-                        // [POSIX 变更]：
-                        // 使用 dlerror() 获取详细错误信息
-                        const char* err_str = ::dlerror();
-                        std::string err_msg = "dlopen failed. ";
-                        if (err_str) err_msg += err_str;
+    /**
+     * @brief [新]
+     * 加载一个指定的插件 DLL/SO 文件。
+     * (POSIX 平台实现)
+     */
+    bool PluginManager::LoadPlugin(
+        const std::filesystem::path& file_path,
+        const std::string& init_func_name)
+    {
+        // [修改] 接口 3:
+        // 委托给内部辅助函数
+        return LoadPluginInternal(file_path, init_func_name);
+    }
 
-                        bus->FireGlobal<event::PluginLoadFailureEvent>(
-                            path_str, err_msg);
-                    }
-                    continue;
-                }
+    /**
+     * @brief [新]
+     * 加载单个插件文件的内部核心逻辑。
+     * (POSIX 平台实现)
+     */
+    bool PluginManager::LoadPluginInternal(
+        const std::filesystem::path& file_path,
+        const std::string& init_func_name)
+    {
+        // 1. [新] 检查是否为常规文件以及扩展名
+        if (!std::filesystem::is_regular_file(file_path))
+        {
+            return false;
+        }
 
-                // 2. 查找入口点函数
-                // (调用此文件中的 POSIX 辅助函数)
-                PluginInitFunc* init_func =
-                    reinterpret_cast<PluginInitFunc*>(
-                        GetFunctionAddress(lib_handle, init_func_name.c_str())
-                        );
+        const auto extension = file_path.extension();
+        if (extension != ".so" && extension != ".dylib")
+        {
+            return false;
+        }
 
-                if (!init_func)
-                {
-                    if (bus)
-                    {
-                        // [POSIX 变更]：
-                        // 使用 dlerror() 获取详细错误信息
-                        const char* err_str = ::dlerror();
-                        std::string err_msg = "dlsym failed (z3yPluginInit not found). ";
-                        if (err_str) err_msg += err_str;
+        PluginPtr<IEventBus> bus = GetService<IEventBus>(clsid::kEventBus);
+        std::string path_str = file_path.string();
 
-                        bus->FireGlobal<event::PluginLoadFailureEvent>(
-                            path_str, err_msg);
-                    }
-                    UnloadDynamicLibrary(lib_handle);
-                    continue;
-                }
+        // 2. [原逻辑] 加载库
+        LibHandle lib_handle = LoadDynamicLibrary(file_path);
+        if (!lib_handle)
+        {
+            if (bus)
+            {
+                const char* err_str = ::dlerror();
+                std::string err_msg = "dlopen failed. ";
+                if (err_str) err_msg += err_str;
 
-                // 3. 执行入口点函数
-                // (这部分逻辑与 Windows 
-                //  完全相同)
-                try
-                {
-                    {
-                        std::lock_guard<std::mutex> lock(registry_mutex_);
-                        current_loading_plugin_path_ = path_str;
-                    }
+                bus->FireGlobal<event::PluginLoadFailureEvent>(
+                    path_str, err_msg);
+            }
+            return false; // [修改]
+        }
 
-                    init_func(this); // <-- 插件在此处调用 RegisterComponent
+        // 3. [原逻辑] 查找入口点函数
+        PluginInitFunc* init_func =
+            reinterpret_cast<PluginInitFunc*>(
+                GetFunctionAddress(lib_handle, init_func_name.c_str())
+                );
 
-                    {
-                        std::lock_guard<std::mutex> lock(registry_mutex_);
-                        current_loading_plugin_path_ = "";
-                        loaded_libs_.push_back(lib_handle);
-                    }
+        if (!init_func)
+        {
+            if (bus)
+            {
+                const char* err_str = ::dlerror();
+                std::string err_msg = "dlsym failed (z3yPluginInit not found). ";
+                if (err_str) err_msg += err_str;
 
-                    if (bus)
-                    {
-                        bus->FireGlobal<event::PluginLoadSuccessEvent>(path_str);
-                    }
-                }
-                catch (const std::exception& e)
-                {
-                    if (bus)
-                    {
-                        bus->FireGlobal<event::PluginLoadFailureEvent>(
-                            path_str, e.what());
-                    }
-                    UnloadDynamicLibrary(lib_handle);
-                }
-                catch (...)
-                {
-                    if (bus)
-                    {
-                        bus->FireGlobal<event::PluginLoadFailureEvent>(
-                            path_str, "Unknown exception during init.");
-                    }
-                    UnloadDynamicLibrary(lib_handle);
-                }
-            } // end if .so/.dylib
-        } // end for loop
+                bus->FireGlobal<event::PluginLoadFailureEvent>(
+                    path_str, err_msg);
+            }
+            UnloadDynamicLibrary(lib_handle);
+            return false; // [修改]
+        }
+
+        // 4. [原逻辑] 执行入口点函数
+        try
+        {
+            {
+                std::lock_guard<std::mutex> lock(registry_mutex_);
+                current_loading_plugin_path_ = path_str;
+            }
+
+            init_func(this); // <-- 插件在此处调用 RegisterComponent
+
+            {
+                std::lock_guard<std::mutex> lock(registry_mutex_);
+                current_loading_plugin_path_ = "";
+                loaded_libs_.push_back(lib_handle);
+            }
+
+            if (bus)
+            {
+                bus->FireGlobal<event::PluginLoadSuccessEvent>(path_str);
+            }
+
+            return true; // [修改]
+        }
+        catch (const std::exception& e)
+        {
+            if (bus)
+            {
+                bus->FireGlobal<event::PluginLoadFailureEvent>(
+                    path_str, e.what());
+            }
+            UnloadDynamicLibrary(lib_handle);
+            return false; // [修改]
+        }
+        catch (...)
+        {
+            if (bus)
+            {
+                bus->FireGlobal<event::PluginLoadFailureEvent>(
+                    path_str, "Unknown exception during init.");
+            }
+            UnloadDynamicLibrary(lib_handle);
+            return false; // [修改]
+        }
     }
 
     /**
      * @brief 卸载所有已加载的插件并清空所有注册表。
-     *
      * (POSIX 平台实现)
-     *
-     * @design
-     * 此函数的代码与 platform_win.cpp
-     * 中的实现完全相同。
-     * 它调用的 UnloadDynamicLibrary()
-     * 将被 C++ 链接器
-     * 解析为此文件顶部
-     * (匿名命名空间中)
-     * 的 POSIX (dlclose) 版本。
-     *
-     * (包含了 "Fix 2"
-     * 的所有安全修复)
      */
     void PluginManager::UnloadAllPlugins()
     {
@@ -227,15 +236,12 @@ namespace z3y
 
         {
             // [Fix 2] (安全修复):
-            // 同时锁定所有三个互斥锁
             std::scoped_lock lock(registry_mutex_, event_mutex_, queue_mutex_);
 
             // 2. 卸载 DLLs (按加载的相反顺序)
             std::reverse(loaded_libs_.begin(), loaded_libs_.end());
             for (LibHandle handle : loaded_libs_)
             {
-                // [POSIX 调用]：
-                // 调用此文件中的 UnloadDynamicLibrary (dlclose)
                 UnloadDynamicLibrary(handle);
             }
 
@@ -253,8 +259,6 @@ namespace z3y
             factories_.clear();
             alias_map_.clear();
             current_loading_plugin_path_.clear();
-
-            // [Fix 4] 清空反向查找表
             global_sub_lookup_.clear();
             sender_sub_lookup_.clear();
 

@@ -4,21 +4,21 @@
  * @author 孙鹏宇
  * @date 2025-11-10
  *
- * [已修正]：
- * 1. FireGlobal 的调用方式已更新为
- * bus->FireGlobal<TEvent>(...args)，不再需要手动 make_shared。
+ * ... (原有的 v2 修复日志) ...
  *
- * [重构 v2 - Fix 2] (安全修复):
- * 1. UnloadAllPlugins()
- * 现在会同时锁定 registry_mutex_,
- * event_mutex_ 和 queue_mutex_。
- * 2. 在卸载 DLL 之前，
- * 它会清空 event_queue_，
- * 以防止 EventLoop 线程
- * 在 DLL 卸载后执行其代码，
- * 导致进程崩溃。
- * 3. 同时清空 gc_queue_，
- * 因为这些 GC 任务已无意义。
+ * [v2.3 修复] (API 重构):
+ * 1.
+ * LoadPluginsFromDirectory
+ * 被重构，
+ * 现在只负责遍历目录，
+ * 并调用 LoadPluginInternal。
+ * 2.
+ * 新增 LoadPlugin
+ * 接口。
+ * 3.
+ * 新增 LoadPluginInternal
+ * 辅助函数，
+ * 包含核心的加载和异常处理逻辑。
  */
 
  // 仅在 Windows 平台上编译此文件
@@ -70,12 +70,13 @@ namespace z3y
 
 
     /**
-     * @brief 扫描指定目录(及其子目录)并加载所有插件。
-     *
+     * @brief [修改]
+     * 扫描指定目录(及其子目录)并加载所有插件。
      * (Windows 平台实现)
      */
     void PluginManager::LoadPluginsFromDirectory(
         const std::filesystem::path& dir,
+        bool recursive,
         const std::string& init_func_name)
     {
         if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir))
@@ -83,102 +84,142 @@ namespace z3y
             return;
         }
 
-        PluginPtr<IEventBus> bus = GetService<IEventBus>(clsid::kEventBus);
-        std::string path_str;
-
-        // 递归遍历目录
-        for (const auto& entry : std::filesystem::recursive_directory_iterator(dir))
+        if (recursive)
         {
-            // 仅加载 .dll 文件
-            if (entry.is_regular_file() && entry.path().extension() == ".dll")
+            // [修改] 接口 1: 递归扫描
+            for (const auto& entry : std::filesystem::recursive_directory_iterator(dir))
             {
-                path_str = entry.path().string();
-
-                // 1. 加载 DLL
-                HMODULE lib_handle = LoadDynamicLibrary(entry.path());
-                if (!lib_handle)
-                {
-                    if (bus)
-                    {
-                        bus->FireGlobal<event::PluginLoadFailureEvent>(
-                            path_str, "LoadLibrary (Win32) failed.");
-                    }
-                    continue;
-                }
-
-                // 2. 查找入口点函数
-                PluginInitFunc* init_func =
-                    reinterpret_cast<PluginInitFunc*>(
-                        GetFunctionAddress(lib_handle, init_func_name.c_str())
-                        );
-
-                if (!init_func)
-                {
-                    if (bus)
-                    {
-                        bus->FireGlobal<event::PluginLoadFailureEvent>(
-                            path_str, "GetProcAddress failed (z3yPluginInit not found).");
-                    }
-                    UnloadDynamicLibrary(lib_handle);
-                    continue;
-                }
-
-                // 3. 执行入口点函数
-                try
-                {
-                    // 在调用 init_func 之前，设置当前加载路径 (用于 RegisterComponent)
-                    {
-                        std::lock_guard<std::mutex> lock(registry_mutex_);
-                        current_loading_plugin_path_ = path_str;
-                    }
-
-                    init_func(this); // <-- 插件在此处调用 RegisterComponent
-
-                    // 加载成功
-                    {
-                        std::lock_guard<std::mutex> lock(registry_mutex_);
-                        current_loading_plugin_path_ = "";
-                        loaded_libs_.push_back(lib_handle); // 保存句柄以便卸载
-                    }
-
-                    if (bus)
-                    {
-                        bus->FireGlobal<event::PluginLoadSuccessEvent>(path_str);
-                    }
-                }
-                catch (const std::exception& e)
-                {
-                    // init_func 抛出异常
-                    if (bus)
-                    {
-                        bus->FireGlobal<event::PluginLoadFailureEvent>(
-                            path_str, e.what());
-                    }
-                    UnloadDynamicLibrary(lib_handle);
-                }
-                catch (...)
-                {
-                    // init_func 抛出未知异常
-                    if (bus)
-                    {
-                        bus->FireGlobal<event::PluginLoadFailureEvent>(
-                            path_str, "Unknown exception during init.");
-                    }
-                    UnloadDynamicLibrary(lib_handle);
-                }
-            } // end if .dll
-        } // end for loop
+                // [修改]
+                // 将所有加载逻辑委托给内部辅助函数
+                LoadPluginInternal(entry.path(), init_func_name);
+            }
+        }
+        else
+        {
+            // [修改] 接口 2: 非递归扫描
+            for (const auto& entry : std::filesystem::directory_iterator(dir))
+            {
+                // [修改]
+                // 将所有加载逻辑委托给内部辅助函数
+                LoadPluginInternal(entry.path(), init_func_name);
+            }
+        }
     }
 
     /**
-     * @brief 卸载所有已加载的插件并清空所有注册表。
-     *
+     * @brief [新]
+     * 加载一个指定的插件 DLL/SO 文件。
      * (Windows 平台实现)
-     *
-     * [Fix 2] (安全修复):
-     * 此函数现在会安全地锁定所有三个互斥锁，
-     * 并在卸载 DLL (FreeLibrary) 之前
-     * 清空 event_queue_ 和 gc_queue_。
+     */
+    bool PluginManager::LoadPlugin(
+        const std::filesystem::path& file_path,
+        const std::string& init_func_name)
+    {
+        // [修改] 接口 3:
+        // 委托给内部辅助函数
+        return LoadPluginInternal(file_path, init_func_name);
+    }
+
+    /**
+     * @brief [新]
+     * 加载单个插件文件的内部核心逻辑。
+     * (Windows 平台实现)
+     */
+    bool PluginManager::LoadPluginInternal(
+        const std::filesystem::path& file_path,
+        const std::string& init_func_name)
+    {
+        // 1. [新] 检查是否为常规文件以及扩展名
+        if (!std::filesystem::is_regular_file(file_path) ||
+            file_path.extension() != ".dll")
+        {
+            return false;
+        }
+
+        PluginPtr<IEventBus> bus = GetService<IEventBus>(clsid::kEventBus);
+        std::string path_str = file_path.string();
+
+        // 2. [原逻辑] 加载 DLL
+        HMODULE lib_handle = LoadDynamicLibrary(file_path);
+        if (!lib_handle)
+        {
+            if (bus)
+            {
+                bus->FireGlobal<event::PluginLoadFailureEvent>(
+                    path_str, "LoadLibrary (Win32) failed.");
+            }
+            return false; // [修改]
+        }
+
+        // 3. [原逻辑] 查找入口点函数
+        PluginInitFunc* init_func =
+            reinterpret_cast<PluginInitFunc*>(
+                GetFunctionAddress(lib_handle, init_func_name.c_str())
+                );
+
+        if (!init_func)
+        {
+            if (bus)
+            {
+                bus->FireGlobal<event::PluginLoadFailureEvent>(
+                    path_str, "GetProcAddress failed (z3yPluginInit not found).");
+            }
+            UnloadDynamicLibrary(lib_handle);
+            return false; // [修改]
+        }
+
+        // 4. [原逻辑] 执行入口点函数
+        try
+        {
+            {
+                std::lock_guard<std::mutex> lock(registry_mutex_);
+                current_loading_plugin_path_ = path_str;
+            }
+
+            init_func(this); // <-- 插件在此处调用 RegisterComponent
+
+            // 加载成功
+            {
+                std::lock_guard<std::mutex> lock(registry_mutex_);
+                current_loading_plugin_path_ = "";
+                loaded_libs_.push_back(lib_handle); // 保存句柄以便卸载
+            }
+
+            if (bus)
+            {
+                bus->FireGlobal<event::PluginLoadSuccessEvent>(path_str);
+            }
+
+            return true; // [修改]
+        }
+        catch (const std::exception& e)
+        {
+            // init_func 抛出异常
+            if (bus)
+            {
+                bus->FireGlobal<event::PluginLoadFailureEvent>(
+                    path_str, e.what());
+            }
+            UnloadDynamicLibrary(lib_handle);
+            return false; // [修改]
+        }
+        catch (...)
+        {
+            // init_func 抛出未知异常
+            if (bus)
+            {
+                bus->FireGlobal<event::PluginLoadFailureEvent>(
+                    path_str, "Unknown exception during init.");
+            }
+            UnloadDynamicLibrary(lib_handle);
+            return false; // [修改]
+        }
+    }
+
+
+    /**
+     * @brief 卸载所有已加载的插件并清空所有注册表。
+     * (Windows 平台实现)
      */
     void PluginManager::UnloadAllPlugins()
     {
@@ -192,12 +233,6 @@ namespace z3y
 
         {
             // [Fix 2] (安全修复):
-            // 必须同时锁定三个互斥锁，
-            // 以安全地停止系统：
-            // 1. registry_mutex_: 停止所有组件注册/创建。
-            // 2. event_mutex_: 停止所有事件订阅/发布
-            //    (以及 GC 队列)。
-            // 3. queue_mutex_: 停止所有异步事件任务。
             std::scoped_lock lock(registry_mutex_, event_mutex_, queue_mutex_);
 
             // 2. 卸载 DLLs (按加载的相反顺序)
@@ -208,16 +243,9 @@ namespace z3y
             }
 
             // 3. [Fix 2] (安全修复): 
-            // 清空异步事件队列
-            // (在持有 queue_mutex_ 锁时)
-            // 确保 EventLoop 
-            // 线程不会在 DLL 卸载后
-            // 执行任何旧任务。
-            event_queue_ = {}; // C++17: 替换为默认构造的空队列
+            event_queue_ = {};
 
             // 4. [Fix 2] (安全修复): 
-            // 清空 GC 队列
-            // (在持有 event_mutex_ 锁时)
             gc_queue_ = {};
 
             // 5. 清空所有内部状态 (在锁仍然持有时)
@@ -228,8 +256,6 @@ namespace z3y
             factories_.clear();
             alias_map_.clear();
             current_loading_plugin_path_.clear();
-
-            // [Fix 4] 清空反向查找表
             global_sub_lookup_.clear();
             sender_sub_lookup_.clear();
 

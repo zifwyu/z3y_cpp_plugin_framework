@@ -13,6 +13,7 @@
 
 #include "plugin_manager.h"
 #include <stdexcept>
+#include <sstream>
 
 namespace z3y
 {
@@ -104,7 +105,19 @@ namespace z3y
 
             if (factories_.count(clsid))
             {
-                throw std::runtime_error("ClassID already registered.");
+                std::string error_msg = "ClassID already registered. CLSID=0x";
+
+                // 将 uint64_t 转换为十六进制字符串
+                std::stringstream ss;
+                ss << std::hex << clsid;
+                error_msg += ss.str();
+
+                if (!alias.empty())
+                {
+                    error_msg += ", Alias='" + alias + "'";
+                }
+
+                throw std::runtime_error(error_msg);
             }
 
             factories_[clsid] = { std::move(factory), is_singleton };
