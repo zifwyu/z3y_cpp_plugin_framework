@@ -8,6 +8,11 @@
  * 1. FireGlobal 的调用方式已更新为
  * bus->FireGlobal<TEvent>(...)，不再需要手动 make_shared。
  * 2. 增加了对 AsyncExceptionEvent 的订阅。
+ *
+ * [v2.2 修复]:
+ * 1.
+ * 为 HostEvent 添加 kEventID，
+ * 以适配新的事件系统。
  */
 
  // 1. 包含核心管理器
@@ -44,6 +49,14 @@
  */
 struct HostEvent : public z3y::Event
 {
+    /**
+     * @brief [修改]
+     * 为此事件定义一个唯一的、
+     * 跨模块一致的 ID。
+     */
+    static constexpr z3y::EventID kEventID =
+        z3y::ConstexprHash("z3y-demo-HostEvent-E1000001");
+
     std::string data;
     explicit HostEvent(std::string d) : data(std::move(d)) {}
 };
@@ -88,6 +101,10 @@ public:
         if (!bus) return;
 
         // 订阅插件加载成功事件
+        // [修改]
+        // 模板调用 bus->SubscribeGlobal<...>
+        // 无需更改，
+        // 内部会使用 TEvent::kEventID
         bus->SubscribeGlobal<z3y::event::PluginLoadSuccessEvent>(
             shared_from_this(),
             [this](const z3y::event::PluginLoadSuccessEvent& e)
@@ -170,6 +187,7 @@ int main(int argc, char* argv[])
     {
         z3y::PluginPtr<z3y::PluginManager> plugin_manager = z3y::PluginManager::Create();
 
+        //
         auto event_bus = plugin_manager->GetService<z3y::IEventBus>(z3y::clsid::kEventBus);
         auto host_logger = HostLogger::Create();
         host_logger->SubscribeToFrameworkEvents(event_bus);
@@ -187,6 +205,7 @@ int main(int argc, char* argv[])
         std::cout << "[Host]: Requesting LoggerService via alias '"
             << logger_alias << "'..." << std::endl;
 
+        //
         z3y::PluginPtr<z3y::ILogger> logger =
             plugin_manager->GetService<z3y::ILogger>(logger_alias);
 
@@ -198,6 +217,7 @@ int main(int argc, char* argv[])
 
 
         logger->Log("Host Requesting SimpleImplA (via clsid::kCSimpleA)...");
+        //
         z3y::PluginPtr<z3y::ISimple> simple_a =
             plugin_manager->CreateInstance<z3y::ISimple>(z3y::clsid::kCSimpleA);
 
@@ -207,6 +227,7 @@ int main(int argc, char* argv[])
         }
 
         logger->Log("Host Requesting SimpleImplB (via alias 'Simple.B')...");
+        //
         z3y::PluginPtr<z3y::ISimple> simple_b =
             plugin_manager->CreateInstance<z3y::ISimple>("Simple.B");
 
@@ -227,7 +248,10 @@ int main(int argc, char* argv[])
         {
             logger->Log("Host firing 'HostEvent' (asynchronously)...");
 
-            // [修正]：使用新的可变参数模板，无需手动 make_shared
+            // [修改]
+            // 模板调用 bus->FireGlobal<...>
+            // 无需更改，
+            // 内部会使用 HostEvent::kEventID
             event_bus->FireGlobal<HostEvent>("Hello from Host!");
 
             logger->Log("Host::FireGlobal has returned (event is now in queue).");

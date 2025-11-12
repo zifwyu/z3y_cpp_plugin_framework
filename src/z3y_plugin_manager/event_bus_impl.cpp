@@ -22,6 +22,16 @@
  * (系统空闲) 的情况下，
  * 也会定期苏醒 (例如每 50ms)，
  * 从而有机会处理 gc_queue_ 中的任务。
+ *
+ * [v2.1 修复]:
+ * 1.
+ * 所有 ...Impl
+ * 函数的实现都已更新，
+ * 使用 EventID
+ * 别名替换 ClassID。
+ * 2.
+ * Unsubscribe()
+ * 中的反向查找表遍历已更新为使用 EventID。
  */
 
 #include "plugin_manager.h"
@@ -154,6 +164,9 @@ namespace z3y
                 }
                 catch (const std::exception& e)
                 {
+                    //
+                    // FireGlobal<...>
+                    //
                     this->FireGlobal<event::AsyncExceptionEvent>(std::string(e.what()));
                 }
                 catch (...)
@@ -196,9 +209,15 @@ namespace z3y
 
     /**
      * @brief [IEventBus 内部实现] 订阅一个全局事件。
+     *
+     * [修改]
+     * 参数 'type'
+     * 已重命名为 'event_id'
+     * (类型已从 ClassID
+     * 更改为 EventID)。
      */
     void PluginManager::SubscribeGlobalImpl(
-        std::type_index type,
+        EventID event_id, // <-- [修改]
         std::weak_ptr<void> sub, // 订阅者
         std::function<void(const Event&)> cb,
         ConnectionType connection_type)
@@ -206,12 +225,14 @@ namespace z3y
         std::lock_guard<std::recursive_mutex> lock(event_mutex_);
 
         // 1. 添加到主订阅列表
-        global_subscribers_[type].push_back(
+        // [修改] 使用 event_id 作为键
+        global_subscribers_[event_id].push_back(
             { std::move(sub), std::weak_ptr<void>(), std::move(cb), connection_type }
         );
 
         // 2. [Fix 4] 添加到反向查找表
-        global_sub_lookup_[global_subscribers_[type].back().subscriber_id_].insert(type);
+        // [修改] 插入 event_id
+        global_sub_lookup_[global_subscribers_[event_id].back().subscriber_id_].insert(event_id);
     }
 
     /**
@@ -225,8 +246,14 @@ namespace z3y
      * 时手动 notify()。
      * EventLoop 的 wait_for()
      * 超时机制会自动处理 GC 队列。
+     *
+     * [修改]
+     * 参数 'type'
+     * 已重命名为 'event_id'
+     * (类型已从 ClassID
+     * 更改为 EventID)。
      */
-    void PluginManager::FireGlobalImpl(std::type_index type, PluginPtr<Event> e_ptr)
+    void PluginManager::FireGlobalImpl(EventID event_id, PluginPtr<Event> e_ptr) // <-- [修改]
     {
         std::vector<std::function<void(const Event&)>> direct_calls;
         std::vector<std::function<void(const Event&)>> queued_calls;
@@ -234,7 +261,8 @@ namespace z3y
 
         {
             std::lock_guard<std::recursive_mutex> lock(event_mutex_);
-            auto it = global_subscribers_.find(type);
+            // [修改] 使用 event_id 查找
+            auto it = global_subscribers_.find(event_id);
             if (it == global_subscribers_.end())
             {
                 return;
@@ -293,10 +321,16 @@ namespace z3y
 
     /**
      * @brief [IEventBus 内部实现] 订阅一个特定发送者的事件。
+     *
+     * [修改]
+     * 参数 'type'
+     * 已重命名为 'event_id'
+     * (类型已从 ClassID
+     * 更改为 EventID)。
      */
     void PluginManager::SubscribeToSenderImpl(
         void* sender_key,
-        std::type_index type,
+        EventID event_id, // <-- [修改]
         std::weak_ptr<void> sub_id, // 订阅者
         std::weak_ptr<void> sender_id, // 发送者 (用于清理)
         std::function<void(const Event&)> cb,
@@ -305,13 +339,15 @@ namespace z3y
         std::lock_guard<std::recursive_mutex> lock(event_mutex_);
 
         // 1. 添加到主订阅列表
-        sender_subscribers_[sender_key][type].push_back(
+        // [修改] 使用 event_id 作为内部 map 的键
+        sender_subscribers_[sender_key][event_id].push_back(
             { std::move(sub_id), std::move(sender_id), std::move(cb), connection_type }
         );
 
         // 2. [Fix 4] 添加到反向查找表
-        sender_sub_lookup_[sender_subscribers_[sender_key][type].back().subscriber_id_]
-            .insert({ sender_key, type });
+        // [修改] 插入 event_id
+        sender_sub_lookup_[sender_subscribers_[sender_key][event_id].back().subscriber_id_]
+            .insert({ sender_key, event_id });
     }
 
     /**
@@ -320,9 +356,15 @@ namespace z3y
      * [Fix 6] (修正):
      * (同 FireGlobalImpl)
      * 移除 did_gc_queue 逻辑。
+     *
+     * [修改]
+     * 参数 'type'
+     * 已重命名为 'event_id'
+     * (类型已从 ClassID
+     * 更改为 EventID)。
      */
     void PluginManager::FireToSenderImpl(void* sender_key,
-        std::type_index type,
+        EventID event_id, // <-- [修改]
         PluginPtr<Event> e_ptr)
     {
         std::vector<std::function<void(const Event&)>> direct_calls;
@@ -337,7 +379,8 @@ namespace z3y
                 return;
             }
 
-            auto event_it = sender_it->second.find(type);
+            // [修改] 使用 event_id 查找
+            auto event_it = sender_it->second.find(event_id);
             if (event_it == sender_it->second.end())
             {
                 return;
@@ -395,6 +438,12 @@ namespace z3y
      *
      * [Fix 4] (性能优化):
      * 使用反向查找表来精确定位并删除订阅。
+     *
+     * [修改]
+     * 内部循环变量 'type'
+     * 已重命名为 'event_id'
+     * (类型已从 ClassID
+     * 更改为 EventID)。
      */
     void PluginManager::Unsubscribe(std::shared_ptr<void> subscriber)
     {
@@ -413,9 +462,13 @@ namespace z3y
         auto global_it = global_sub_lookup_.find(weak_id);
         if (global_it != global_sub_lookup_.end())
         {
-            for (const std::type_index& type : global_it->second)
+            // [修改]
+            // 'type' 
+            // -> 'event_id'
+            // (类型已变为 EventID)
+            for (const EventID& event_id : global_it->second)
             {
-                auto event_list_it = global_subscribers_.find(type);
+                auto event_list_it = global_subscribers_.find(event_id);
                 if (event_list_it != global_subscribers_.end())
                 {
                     auto& subs = event_list_it->second;
@@ -431,15 +484,22 @@ namespace z3y
         auto sender_it = sender_sub_lookup_.find(weak_id);
         if (sender_it != sender_sub_lookup_.end())
         {
+            // [修改]
+            // pair 类型现在是
+            // (void*, EventID)
             for (const auto& pair : sender_it->second)
             {
                 void* sender_key = pair.first;
-                const std::type_index& type = pair.second;
+                // [修改]
+                // 'type' 
+                // -> 'event_id'
+                // (类型已变为 EventID)
+                const EventID& event_id = pair.second;
 
                 auto sender_map_it = sender_subscribers_.find(sender_key);
                 if (sender_map_it != sender_subscribers_.end())
                 {
-                    auto event_list_it = sender_map_it->second.find(type);
+                    auto event_list_it = sender_map_it->second.find(event_id);
                     if (event_list_it != sender_map_it->second.end())
                     {
                         auto& subs = event_list_it->second;

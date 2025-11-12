@@ -7,6 +7,13 @@
  * @details
  * 宿主程序可以订阅这些事件，以实时监控插件的加载和注册过程。
  * [已重构]：新增了 AsyncExceptionEvent。
+ *
+ * [v2.2 修复]:
+ * 1.
+ * 为所有事件结构体 (Event struct)
+ * 添加了
+ * 'static constexpr EventID kEventID'，
+ * 以适配新的事件系统。
  */
 
 #pragma once
@@ -28,6 +35,14 @@ namespace z3y
          */
         struct PluginLoadSuccessEvent : public Event
         {
+            /**
+             * @brief [修改]
+             * 为此事件定义一个唯一的、
+             * 跨模块一致的 ID。
+             */
+            static constexpr EventID kEventID =
+                ConstexprHash("z3y-event-PluginLoadSuccess-E0000001");
+
             std::string plugin_path; //!< 被加载的 DLL 的完整路径
 
             /**
@@ -45,6 +60,14 @@ namespace z3y
          */
         struct PluginLoadFailureEvent : public Event
         {
+            /**
+             * @brief [修改]
+             * 为此事件定义一个唯一的、
+             * 跨模块一致的 ID。
+             */
+            static constexpr EventID kEventID =
+                ConstexprHash("z3y-event-PluginLoadFailure-E0000002");
+
             std::string plugin_path;     //!< 尝试加载的 DLL 的路径
             std::string error_message;   //!< 失败原因
 
@@ -63,6 +86,14 @@ namespace z3y
          */
         struct ComponentRegisterEvent : public Event
         {
+            /**
+             * @brief [修改]
+             * 为此事件定义一个唯一的、
+             * 跨模块一致的 ID。
+             */
+            static constexpr EventID kEventID =
+                ConstexprHash("z3y-event-ComponentRegister-E0000003");
+
             ClassID clsid;               //!< 注册的 ClassID (uint64_t)
             std::string alias;           //!< 注册的字符串别名 (如果有)
             std::string plugin_path;     //!< 此组件来自哪个 DLL
@@ -88,6 +119,14 @@ namespace z3y
          */
         struct AsyncExceptionEvent : public Event
         {
+            /**
+             * @brief [修改]
+             * 为此事件定义一个唯一的、
+             * 跨模块一致的 ID。
+             */
+            static constexpr EventID kEventID =
+                ConstexprHash("z3y-event-AsyncException-E0000004");
+
             std::string exception_what; //!< e.what() 捕获到的异常信息
 
             /**

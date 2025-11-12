@@ -11,6 +11,15 @@
  * 这是为了配合 `PluginImpl`
  * 解决“钻石继承”
  * 歧义 (C2594)。
+ *
+ * [v2.1 修复]:
+ * 1.
+ * 所有 ...Impl
+ * 纯虚函数的签名
+ * 已从 ClassID
+ * 切换到 EventID
+ * 别名，
+ * 以明确意图。
  */
 
 #pragma once
@@ -22,7 +31,7 @@
 #include "i_component.h"      //
 #include "connection_type.h"  //
 #include <functional>
-#include <typeindex>
+#include <typeindex>          //
 #include <memory>
 #include <utility>      // 用于 std::forward
 
@@ -60,6 +69,12 @@ namespace z3y
     {
     public:
         /**
+         * @brief 为 IEventBus 接口定义一个唯一的接口 ID (IID)。
+         */
+        static constexpr ClassID kIID =
+            ConstexprHash("z3y-core-IEventBus-IID-A0000002");
+
+        /**
          * @brief 虚析构函数。
          */
         virtual ~IEventBus() = default;
@@ -79,7 +94,15 @@ namespace z3y
             static_assert(std::is_base_of_v<std::enable_shared_from_this<TSubscriber>, TSubscriber>,
                 "Subscriber must inherit from std::enable_shared_from_this");
 
-            std::type_index event_type = std::type_index(typeid(TEvent));
+            /*
+             * [修改]
+             * 关键改动：
+             * 从 std::type_index(typeid(TEvent))
+             * 切换到 TEvent::kEventID。
+             * TEvent 结构体现在必须定义一个
+             * 'static constexpr ClassID kEventID'。
+             */
+            ClassID event_id = TEvent::kEventID;
 
             std::function<void(const Event&)> wrapper =
                 [cb = std::forward<TCallback>(callback)](const Event& e)
@@ -89,7 +112,8 @@ namespace z3y
 
             std::weak_ptr<void> weak_id = subscriber;
 
-            SubscribeGlobalImpl(event_type, std::move(weak_id), std::move(wrapper), type);
+            // [修改] 调用 ...Impl
+            SubscribeGlobalImpl(event_id, std::move(weak_id), std::move(wrapper), type);
         }
 
         /**
@@ -105,7 +129,13 @@ namespace z3y
                 std::make_shared<TEvent>(std::forward<Args>(args)...);
 
             PluginPtr<Event> base_event = event_ptr;
-            FireGlobalImpl(std::type_index(typeid(TEvent)), base_event);
+
+            /*
+             * [修改]
+             * 关键改动：
+             * 使用 TEvent::kEventID 作为事件标识符。
+             */
+            FireGlobalImpl(TEvent::kEventID, base_event);
         }
 
         // --- 2. 实例到实例 (Sender-Specific) ---
@@ -124,7 +154,9 @@ namespace z3y
             static_assert(std::is_base_of_v<std::enable_shared_from_this<TSubscriber>, TSubscriber>,
                 "Subscriber must inherit from std::enable_shared_from_this");
 
-            std::type_index event_type = std::type_index(typeid(TEvent));
+            // [修改] 使用 kEventID
+            ClassID event_id = TEvent::kEventID;
+
             std::function<void(const Event&)> wrapper =
                 [cb = std::forward<TCallback>(callback)](const Event& e)
                 {
@@ -135,8 +167,9 @@ namespace z3y
             std::weak_ptr<void> weak_sender_id = sender;
             void* sender_key = sender.get();
 
+            // [修改] 调用 ...Impl
             SubscribeToSenderImpl(sender_key,
-                event_type,
+                event_id,
                 std::move(weak_sub_id),
                 std::move(weak_sender_id),
                 std::move(wrapper),
@@ -158,7 +191,8 @@ namespace z3y
             PluginPtr<Event> base_event = event_ptr;
             void* sender_key = sender.get();
 
-            FireToSenderImpl(sender_key, std::type_index(typeid(TEvent)), base_event);
+            // [修改] 使用 kEventID
+            FireToSenderImpl(sender_key, TEvent::kEventID, base_event);
         }
 
         // --- 3. 手动生命周期管理 ---
@@ -169,26 +203,38 @@ namespace z3y
         virtual void Unsubscribe(std::shared_ptr<void> subscriber) = 0;
 
     protected:
-        /** @internal */
-        virtual void SubscribeGlobalImpl(std::type_index type,
+        /**
+         * @internal
+         * [修改] 参数从 ClassID 更改为 EventID
+         */
+        virtual void SubscribeGlobalImpl(EventID event_id,
             std::weak_ptr<void> sub,
             std::function<void(const Event&)> cb,
             ConnectionType connection_type) = 0;
 
-        /** @internal */
-        virtual void FireGlobalImpl(std::type_index type, PluginPtr<Event> e_ptr) = 0;
+        /**
+         * @internal
+         * [修改] 参数从 ClassID 更改为 EventID
+         */
+        virtual void FireGlobalImpl(EventID event_id, PluginPtr<Event> e_ptr) = 0;
 
-        /** @internal */
+        /**
+         * @internal
+         * [修改] 参数从 ClassID 更改为 EventID
+         */
         virtual void SubscribeToSenderImpl(void* sender_key,
-            std::type_index type,
+            EventID event_id,
             std::weak_ptr<void> sub_id,
             std::weak_ptr<void> sender_id,
             std::function<void(const Event&)> cb,
             ConnectionType connection_type) = 0;
 
-        /** @internal */
+        /**
+         * @internal
+         * [修改] 参数从 ClassID 更改为 EventID
+         */
         virtual void FireToSenderImpl(void* sender_key,
-            std::type_index type,
+            EventID event_id,
             PluginPtr<Event> e_ptr) = 0;
     };
 
@@ -199,6 +245,9 @@ namespace z3y
     {
         /**
          * @brief 框架核心事件总线服务的 ClassID。
+         *
+         * 注意：这是 *实现* (PluginManager) 的 ClassID，
+         * 而不是 IEventBus 接口的 IID。
          */
         constexpr ClassID kEventBus =
             ConstexprHash("z3y-core-event-bus-uuid-D54E82F1-A376-4E9A-8178-05B1E8A73719");

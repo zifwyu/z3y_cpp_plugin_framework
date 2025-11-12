@@ -21,6 +21,18 @@
  * 5. EventLoop 线程会异步消耗此队列，
  * 并安全地清理反向查找表，
  * 从而在不牺牲性能和易用性的前提下解决内存泄漏。
+ *
+ * [v2.1 修复]:
+ * 1. IEventBus
+ * 的 ...Impl
+ * override 签名
+ * 已更新为使用 EventID。
+ *
+ * 2.
+ * EventMap, SenderMap,
+ * 和反向查找表的键
+ * 已从 ClassID
+ * 替换为 EventID。
  */
 
 #pragma once
@@ -46,7 +58,7 @@
 #include <queue>
 #include <condition_variable>
 #include <set>
-#include <typeindex>
+#include <typeindex> //
 
 namespace z3y
 {
@@ -56,6 +68,7 @@ namespace z3y
      */
     class PluginManager : public IPluginRegistry,
         public PluginImpl<PluginManager, clsid::kEventBus, IEventBus>
+        //
     {
     public:
         /**
@@ -99,6 +112,9 @@ namespace z3y
                 factory = it->second.factory;
             }
             auto base_obj = factory();
+            //
+            // PluginCast<T>
+            //
             return PluginCast<T>(base_obj);
         }
 
@@ -121,6 +137,9 @@ namespace z3y
             {
                 if (auto locked_ptr = it_inst->second.lock())
                 {
+                    //
+                    // PluginCast<T>
+                    //
                     return PluginCast<T>(locked_ptr);
                 }
             }
@@ -129,6 +148,9 @@ namespace z3y
             if (base_obj)
             {
                 singletons_[clsid] = base_obj;
+                //
+                // PluginCast<T>
+                //
                 return PluginCast<T>(base_obj);
             }
             return nullptr;
@@ -167,25 +189,45 @@ namespace z3y
         // --- IEventBus 接口实现 ---
         void Unsubscribe(std::shared_ptr<void> subscriber) override;
 
-        /** @internal */
-        void SubscribeGlobalImpl(std::type_index type,
+        /**
+         * @internal
+         * [修改]
+         * 签名从 (ClassID event_id, ...)
+         * 更改为 (EventID event_id, ...)
+         */
+        void SubscribeGlobalImpl(EventID event_id,
             std::weak_ptr<void> sub,
             std::function<void(const Event&)> cb,
             ConnectionType connection_type) override;
-        /** @internal */
-        void FireGlobalImpl(std::type_index type, PluginPtr<Event> e_ptr) override;
+        /**
+         * @internal
+         * [修改]
+         * 签名从 (ClassID event_id, ...)
+         * 更改为 (EventID event_id, ...)
+         */
+        void FireGlobalImpl(EventID event_id, PluginPtr<Event> e_ptr) override;
 
-        /** @internal */
+        /**
+         * @internal
+         * [修改]
+         * 签名从 (..., ClassID event_id, ...)
+         * 更改为 (..., EventID event_id, ...)
+         */
         void SubscribeToSenderImpl(void* sender_key,
-            std::type_index type,
+            EventID event_id,
             std::weak_ptr<void> sub_id,
             std::weak_ptr<void> sender_id,
             std::function<void(const Event&)> cb,
             ConnectionType connection_type) override;
 
-        /** @internal */
+        /**
+         * @internal
+         * [修改]
+         * 签名从 (..., ClassID event_id, ...)
+         * 更改为 (..., EventID event_id, ...)
+         */
         void FireToSenderImpl(void* sender_key,
-            std::type_index type,
+            EventID event_id,
             PluginPtr<Event> e_ptr) override;
 
     private:
@@ -240,7 +282,15 @@ namespace z3y
         );
 
         using EventCallbackList = std::vector<Subscription>;
-        using EventMap = std::map<std::type_index, EventCallbackList>;
+
+        /*
+         * [修改]
+         * EventMap
+         * 的键 (Key)
+         * 从 ClassID
+         * 切换到 EventID。
+         */
+        using EventMap = std::map<EventID, EventCallbackList>;
         using SenderMap = std::map<void*, EventMap>;
         using EventTask = std::function<void()>;
 
@@ -250,22 +300,30 @@ namespace z3y
         /**
          * @brief [Fix 4] 全局事件反向查找表。
          * Key: 订阅者 (weak_ptr)。
-         * Value: 该订阅者订阅的所有全局事件的 type_index 集合。
+         * Value:
+         * [修改]
+         * 该订阅者订阅的所有全局事件的
+         * EventID (event_id)
+         * 集合。
          */
         using SubscriberLookupMapG = std::map<
             std::weak_ptr<void>,
-            std::set<std::type_index>,
+            std::set<EventID>, // <-- [修改]
             std::owner_less<std::weak_ptr<void>>
         >;
 
         /**
          * @brief [Fix 4] 实例事件反向查找表。
          * Key: 订阅者 (weak_ptr)。
-         * Value: 该订阅者订阅的所有实例事件的 (sender_key, type_index) 对的集合。
+         * Value:
+         * [修改]
+         * 该订阅者订阅的所有实例事件的
+         * (sender_key, EventID)
+         * 对的集合。
          */
         using SubscriberLookupMapS = std::map<
             std::weak_ptr<void>,
-            std::set<std::pair<void*, std::type_index>>,
+            std::set<std::pair<void*, EventID>>, // <-- [修改]
             std::owner_less<std::weak_ptr<void>>
         >;
 

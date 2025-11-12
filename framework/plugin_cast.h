@@ -26,6 +26,12 @@
  * (源智能指针)
  * 作为别名构造函数
  * 的生命周期对象。
+ *
+ * [v2.2 修复]:
+ * 1. QueryInterfaceRaw
+ * 的调用参数从 std::type_index(typeid(To))
+ * 替换为 To::kIID，
+ * 以匹配 IComponent 的新签名。
  */
 
 #pragma once
@@ -67,6 +73,13 @@ namespace z3y
         static_assert(std::is_base_of_v<IComponent, From>,
             "Source type 'From' must inherit from z3y::IComponent.");
 
+        // [修改]
+        // 增加一个编译期检查，
+        // 确保目标接口 'To' 已经定义了 kIID。
+        static_assert(std::is_same_v<decltype(To::kIID), const ClassID>,
+            "Target type 'To' must define 'static constexpr ClassID kIID'.");
+
+
         // 1. 空指针检查
         if (!from)
         {
@@ -85,7 +98,14 @@ namespace z3y
         // 4. [重构] 
         //    获取“目标接口的原始指针”
         //    (*** 唯一的虚函数调用 ***)
-        void* raw_iface_ptr = from->QueryInterfaceRaw(std::type_index(typeid(To)));
+        /*
+         * [修改]
+         * 关键改动：
+         * 从 std::type_index(typeid(To))
+         * 切换到 To::kIID。
+         * 'To' 接口现在必须定义 kIID。
+         */
+        void* raw_iface_ptr = from->QueryInterfaceRaw(To::kIID);
 
         if (!raw_iface_ptr)
         {
