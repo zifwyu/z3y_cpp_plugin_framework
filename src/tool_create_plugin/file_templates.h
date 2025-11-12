@@ -3,6 +3,22 @@
  * @brief 包含用于生成新插件的 C++ 原始字符串模板。
  * @author 孙鹏宇
  * @date 2025-11-10
+ *
+ * [修改]
+ * 1.
+ * 所有模板均已现代化，
+ * 以使用 Z3Y_DEFINE_INTERFACE,
+ * Z3Y_DEFINE_COMPONENT_ID,
+ * 和简化的 PluginImpl
+ * 继承。
+ * 2.
+ * 模板现在支持并使用
+ * $$PLUGIN_NAMESPACE$$
+ * 和
+ * $$INTERFACE_NAMESPACE$$
+ * 令牌。
+ * 3.
+ * 模板现在包含 z3y_plugin_sdk.h
  */
 
 #ifndef Z3Y_TOOL_CREATE_PLUGIN_FILE_TEMPLATES_H_
@@ -22,7 +38,7 @@ namespace z3y
             const std::string kInterfaceHeader = R"raw(/**
  * @file $$INTERFACE_FILENAME$$
  * @brief 定义 $$INTERFACE_NAME$$ 接口。
- * @author 孙鹏宇
+ * @author (您的名字)
  * @date $$DATE$$
  */
 
@@ -32,20 +48,26 @@ namespace z3y
 #define $$INTERFACE_INCLUDE_GUARD$$
 
 #include "framework/i_component.h"
+#include "framework/interface_helpers.h" // 
+                                         // 
+                                         // 
+                                         // 
+                                         // 
 
-namespace z3y
+namespace $$INTERFACE_NAMESPACE$$
 {
     /**
      * @class $$INTERFACE_NAME$$
      * @brief 
      */
-    class $$INTERFACE_NAME$$ : public IComponent
+    class $$INTERFACE_NAME$$ : public virtual z3y::IComponent
     {
     public:
         /**
-         * @brief 虚析构函数。
+         * @brief [Z3Y 框架] 
+         * 自动定义 kIid 和 kName
          */
-        virtual ~$$INTERFACE_NAME$$() = default;
+        Z3Y_DEFINE_INTERFACE($$INTERFACE_NAME$$, "$$UUID_IFACE$$")
 
         /**
          * @brief 示例业务函数，请修改。
@@ -53,7 +75,7 @@ namespace z3y
         virtual void MyFunction() = 0;
     };
 
-} // namespace z3y
+} // namespace $$INTERFACE_NAMESPACE$$
 
 #endif // $$INTERFACE_INCLUDE_GUARD$$
 )raw";
@@ -63,7 +85,7 @@ namespace z3y
             const std::string kImplHeader = R"raw(/**
  * @file $$IMPL_FILENAME_H$$
  * @brief 定义 $$IMPL_CLASS_NAME$$ 实现类。
- * @author 孙鹏宇
+ * @author (您的名字)
  * @date $$DATE$$
  */
 
@@ -72,28 +94,25 @@ namespace z3y
 #ifndef $$IMPL_INCLUDE_GUARD_H$$
 #define $$IMPL_INCLUDE_GUARD_H$$
 
-#include "framework/plugin_impl.h"
+#include "framework/z3y_plugin_sdk.h"
 #include "$$INTERFACE_PATH$$/$$INTERFACE_FILENAME$$"
 
-namespace z3y
+namespace $$PLUGIN_NAMESPACE$$
 {
-    /**
-     * @brief $$IMPL_CLASS_NAME$$ 实现类的 ClassID。
-     */
-    namespace clsid
-    {
-        constexpr ClassID $$IMPL_CONST_NAME$$ =
-            ConstexprHash("$$UUID$$");
-    } // namespace clsid
-
     /**
      * @class $$IMPL_CLASS_NAME$$
      * @brief $$INTERFACE_NAME$$ 接口的具体实现。
      */
     class $$IMPL_CLASS_NAME$$ : public z3y::PluginImpl<$$IMPL_CLASS_NAME$$,
-                                                 clsid::$$IMPL_CONST_NAME$$,
-                                                 $$INTERFACE_NAME$$>
+                                                 $$INTERFACE_NAMESPACE$$::$$INTERFACE_NAME$$>
     {
+    public:
+        /**
+         * @brief [Z3Y 框架] 
+         * 自动定义 kClsid。
+         */
+        Z3Y_DEFINE_COMPONENT_ID("$$UUID_IMPL$$")
+
     public:
         /**
          * @brief 构造函数。
@@ -113,7 +132,7 @@ namespace z3y
         void MyFunction() override;
     };
 
-} // namespace z3y
+} // namespace $$PLUGIN_NAMESPACE$$
 
 #endif // $$IMPL_INCLUDE_GUARD_H$$
 )raw";
@@ -123,14 +142,14 @@ namespace z3y
             const std::string kImplSource = R"raw(/**
  * @file $$IMPL_FILENAME_CPP$$
  * @brief $$IMPL_CLASS_NAME$$ 实现类的源文件。
- * @author 孙鹏宇
+ * @author (您的名字)
  * @date $$DATE$$
  */
 
 #include "$$IMPL_FILENAME_H$$"
 #include <iostream>
 
-namespace z3y
+namespace $$PLUGIN_NAMESPACE$$
 {
 
     /**
@@ -138,7 +157,7 @@ namespace z3y
      */
     $$IMPL_CLASS_NAME$$::$$IMPL_CLASS_NAME$$()
     {
-        std::cout << "[$$PLUGIN_NAME$$]: $$IMPL_CLASS_NAME$$ created." << std::endl;
+        std::cout << "  [$$PLUGIN_NAME$$]: $$IMPL_CLASS_NAME$$ created." << std::endl;
     }
 
     /**
@@ -146,7 +165,7 @@ namespace z3y
      */
     $$IMPL_CLASS_NAME$$::~$$IMPL_CLASS_NAME$$()
     {
-        std::cout << "[$$PLUGIN_NAME$$]: $$IMPL_CLASS_NAME$$ destroyed." << std::endl;
+        std::cout << "  [$$PLUGIN_NAME$$]: $$IMPL_CLASS_NAME$$ destroyed." << std::endl;
     }
 
     /**
@@ -154,10 +173,10 @@ namespace z3y
      */
     void $$IMPL_CLASS_NAME$$::MyFunction()
     {
-        std::cout << "[$$PLUGIN_NAME$$]: $$IMPL_CLASS_NAME$$::MyFunction() called." << std::endl;
+        std::cout << "  [$$PLUGIN_NAME$$]: $$IMPL_CLASS_NAME$$::MyFunction() called." << std::endl;
     }
 
-} // namespace z3y
+} // namespace $$PLUGIN_NAMESPACE$$
 )raw";
 
 
@@ -165,7 +184,7 @@ namespace z3y
             const std::string kPluginEntry = R"raw(/**
  * @file plugin_entry.cpp
  * @brief $$PLUGIN_NAME$$ 插件的入口点文件。
- * @author 孙鹏宇
+ * @author (您的名字)
  * @date $$DATE$$
  *
  * @details
@@ -174,8 +193,10 @@ namespace z3y
  */
 
 #include "$$IMPL_FILENAME_H$$"
-#include "framework/i_plugin_registry.h"
-#include "framework/plugin_registration.h" 
+#include "framework/z3y_plugin_sdk.h" // 
+                                      // 
+                                      // 
+                                      // 
 
 // --- 定义 DLL 导出宏 ---
 #ifdef _WIN32
@@ -198,7 +219,7 @@ extern "C" PLUGIN_API void z3yPluginInit(z3y::IPluginRegistry* registry)
 
     // 注册 $$IMPL_CLASS_NAME$$
     // (您可以选择 RegisterComponent 或 RegisterService)
-    z3y::RegisterComponent<z3y::$$IMPL_CLASS_NAME$$>(registry, "$$ALIAS$$");
+    z3y::RegisterComponent<$$PLUGIN_NAMESPACE$$::$$IMPL_CLASS_NAME$$>(registry, "$$ALIAS$$");
 }
 )raw";
 

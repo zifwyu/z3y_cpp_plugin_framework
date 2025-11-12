@@ -54,6 +54,18 @@
     <ClInclude Include="..\..\..\framework\z3y_plugin_sdk.h">
       <Filter>framework</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\framework\i_plugin_query.h">
+      <Filter>framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\framework\interface_helpers.h">
+      <Filter>framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\framework\component_helpers.h">
+      <Filter>framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\framework\event_helpers.h">
+      <Filter>framework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\src\z3y_plugin_manager\readme.txt">

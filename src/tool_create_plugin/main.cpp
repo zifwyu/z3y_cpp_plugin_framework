@@ -5,9 +5,19 @@
  * @date 2025-11-10
  *
  * [已修正]：
- * 1. 修正了 get_current_date() 函数，
- * 使用 localtime_s (Windows) 和 localtime_r (POSIX)
- * 来替代不安全的 localtime()，解决了 C4996 编译警告。
+ * 1. ...
+ * 2. [修改]
+ * 更新令牌 (Token)
+ * 生成逻辑以适应新的宏和命名空间设计。
+ * 3. [修改]
+ * 现在生成两个 UUID (
+ * 接口一个，
+ * 实现一个
+ * )。
+ * 4. [修改]
+ * 移除了已废弃的 IMPL_CONST_NAME
+ * (kCMyClassName)
+ * 令牌。
  */
 
 #include "uuid_gen.h"
@@ -31,17 +41,13 @@ std::string ToLower(std::string s)
     return s;
 }
 
+// [已废弃]
 // 辅助函数：将 "MyClassName" 转换为 "kCMyClassName"
 // (函数: PascalCase)
-std::string ToKName(std::string s)
-{
-    if (s.empty())
-    {
-        return "kComponent";
-    }
-    s[0] = std::toupper(s[0]);
-    return "kC" + s;
-}
+// std::string ToKName(std::string s)
+// {
+//     ...
+// }
 
 // 辅助函数：将 "IMyInterface" 转换为 "i_my_interface.h"
 // (函数: PascalCase)
@@ -194,13 +200,16 @@ int main(int argc, char* argv[])
 
     if (args.find("name") == args.end() ||
         args.find("interface") == args.end() ||
-        args.find("plugin") == args.end())
+        args.find("plugin") == args.end() ||
+        args.find("interface_path") == args.end() // [修改] 
+        // 强制要求
+        )
     {
         std::cerr << "Usage: tool_create_plugin.exe "
             << "--name <ImplClassName> "
             << "--interface <IInterfaceName> "
             << "--plugin <plugin_name> "
-            << "[--interface_path <relative_path_to_interface_dir>]"
+            << "--interface_path <interface_dir_name>" // [修改]
             << std::endl;
         std::cerr << "Example: tool_create_plugin.exe "
             << "--name SimpleImplA "
@@ -214,32 +223,52 @@ int main(int argc, char* argv[])
     std::string impl_class_name = args["name"];
     std::string interface_name = args["interface"];
     std::string plugin_name = args["plugin"];
-    std::string interface_path = args.count("interface_path") ?
-        args["interface_path"] : plugin_name;
-    std::string alias = impl_class_name;
+    std::string interface_path = args["interface_path"]; // [修改]
+    std::string alias = impl_class_name; // 
+    // [保留] 
+    // 别名仍由 plugin_entry.cpp 
+    // 定义
 
-    // 2. 推导所有需要的名称
-    std::string impl_const_name = ToKName(impl_class_name);
+// 2. 推导所有需要的名称
+// [修改] 
+// 为命名空间添加令牌
+    std::string interface_namespace = interface_path;
+    std::string plugin_namespace = plugin_name;
+
+    // [修改] 
+    // 移除已废弃的 impl_const_name
+    // std::string impl_const_name = ToKName(impl_class_name);
+
     std::string interface_filename = ToInterfaceFilename(interface_name);
     std::string impl_filename_base = ToImplFilenameBase(impl_class_name);
     std::string impl_filename_h = impl_filename_base + ".h";
     std::string impl_filename_cpp = impl_filename_base + ".cpp";
     std::string plugin_guard_prefix = "Z3Y_SRC_" + ToLower(plugin_name);
 
+    // [修改] 
+    // 
+    // 
+    std::string iface_guard_prefix = "Z3Y_SRC_" + ToLower(interface_path);
+
     std::map<std::string, std::string> tokens = {
         {"INTERFACE_NAME", interface_name},
+        {"INTERFACE_NAMESPACE", interface_namespace}, // [新]
         {"INTERFACE_FILENAME", interface_filename},
         {"INTERFACE_PATH", interface_path},
-        {"INTERFACE_INCLUDE_GUARD", ToIncludeGuard("Z3Y_SRC_" + ToLower(interface_path), interface_filename)},
+        {"INTERFACE_INCLUDE_GUARD", ToIncludeGuard(iface_guard_prefix, interface_filename)}, // [修改]
         {"IMPL_CLASS_NAME", impl_class_name},
-        {"IMPL_CONST_NAME", impl_const_name},
+        // {"IMPL_CONST_NAME", impl_const_name}, // [移除]
         {"IMPL_FILENAME_H", impl_filename_h},
         {"IMPL_FILENAME_CPP", impl_filename_cpp},
         {"IMPL_INCLUDE_GUARD_H", ToIncludeGuard(plugin_guard_prefix, impl_filename_h)},
         {"PLUGIN_NAME", plugin_name},
+        {"PLUGIN_NAMESPACE", plugin_namespace}, // [新]
         {"ALIAS", alias},
-        {"UUID", z3y::tool::generate_uuid_v4()},
-        {"DATE", GetCurrentDate()}
+        {"UUID_IFACE", z3y::tool::generate_uuid_v4()}, // [新]
+        {"UUID_IMPL", z3y::tool::generate_uuid_v4()}, // [新] 
+        // (
+        // 以前叫 UUID)
+{"DATE", GetCurrentDate()}
     };
 
     try

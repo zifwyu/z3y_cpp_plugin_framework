@@ -20,10 +20,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\framework\class_id.h" />
+    <ClInclude Include="..\..\..\framework\component_helpers.h" />
     <ClInclude Include="..\..\..\framework\connection_type.h" />
+    <ClInclude Include="..\..\..\framework\event_helpers.h" />
     <ClInclude Include="..\..\..\framework\framework_events.h" />
+    <ClInclude Include="..\..\..\framework\interface_helpers.h" />
     <ClInclude Include="..\..\..\framework\i_component.h" />
     <ClInclude Include="..\..\..\framework\i_event_bus.h" />
+    <ClInclude Include="..\..\..\framework\i_plugin_query.h" />
     <ClInclude Include="..\..\..\framework\i_plugin_registry.h" />
     <ClInclude Include="..\..\..\framework\plugin_cast.h" />
     <ClInclude Include="..\..\..\framework\plugin_impl.h" />

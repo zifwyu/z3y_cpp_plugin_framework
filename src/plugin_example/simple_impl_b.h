@@ -1,55 +1,65 @@
 /**
  * @file simple_impl_b.h
- * @brief z3y::ISimple 接口的实现类 SimpleImplB 的头文件。
+ * @brief 定义 z3y::example::SimpleImplB (普通组件)。
  * @author 孙鹏宇
  * @date 2025-11-10
  *
- * @details
- * 演示了如何在同一个插件中为同一个接口提供第二个实现。
+ * [修改]
+ * ...
+ * 3. [修改] [!!]
+ * Z3Y_DEFINE_COMPONENT_ID
+ * 宏已移回类 *内部*。
+ * 4. [修改] [!!]
+ * 简化 PluginImpl
+ * 继承 (
+ * 移除 kClsid
+ * 模板参数)
  */
 
-#ifndef Z3Y_SRC_PLUGIN_EXAMPLE_SIMPLE_IMPL_B_H_
-#define Z3Y_SRC_PLUGIN_EXAMPLE_SIMPLE_IMPL_B_H_
+#pragma once
 
-#include "framework/plugin_impl.h"
-#include "interfaces_example/i_simple.h" // 依赖 ISimple 接口
+#ifndef Z3Y_PLUGIN_EXAMPLE_SIMPLE_IMPL_B_H_
+#define Z3Y_PLUGIN_EXAMPLE_SIMPLE_IMPL_B_H_
 
-namespace z3y
-{
-    /**
-     * @brief SimpleImplB 实现类的 ClassID。
-     */
-    namespace clsid
-    {
-        constexpr ClassID kCSimpleB =
-            ConstexprHash("z3y-example-csimple-impl-B-UUID");
-    } // namespace clsid
+#include "interfaces_example/i_simple.h"  // 依赖 ISimple
+#include "framework/plugin_impl.h"        // 依赖 PluginImpl
+#include "framework/class_id.h"
+#include "framework/component_helpers.h"  // [新]
+#include <string>
 
-    /**
-     * @class SimpleImplB
-     * @brief ISimple 接口的 *第二个* 具体实现。
-     */
-    class SimpleImplB : public z3y::PluginImpl<SimpleImplB,
-        clsid::kCSimpleB,
-        ISimple>
-    {
-    public:
-        /**
-         * @brief 构造函数。
-         */
-        SimpleImplB();
+namespace z3y {
+    namespace example { // [修改]
+
+        // --- 1. [修改] ClassId 
+        // 定义已移入类内部 ---
 
         /**
-         * @brief 析构函数。
+         * @class SimpleImplB
+         * @brief ISimple 接口的另一个普通组件实现 ("B")。
          */
-        virtual ~SimpleImplB();
+        class SimpleImplB
+            : public PluginImpl<SimpleImplB,
+            ISimple> // [修改] 
+            // 移除了 kClsid 
+            // 模板参数
+        {
+        public:
+            /**
+             * @brief [新]
+             * 使用 Z3Y_DEFINE_COMPONENT_ID
+             * 定义 kClsid
+             */
+            Z3Y_DEFINE_COMPONENT_ID("z3y-example-CSimpleImplB-UUID-B6ED7068")
 
-        /**
-         * @brief ISimple::Add 接口的实现。
-         */
-        int Add(int a, int b) const override;
-    };
+        public:
+            SimpleImplB();
+            virtual ~SimpleImplB();
 
-} // namespace z3y
+            // --- ISimple 接口实现 ---
+            std::string GetSimpleString() override;
+        };
 
-#endif // Z3Y_SRC_PLUGIN_EXAMPLE_SIMPLE_IMPL_B_H_
+    }  // namespace example
+}  // namespace z3y
+
+#endif  // Z3Y_PLUGIN_EXAMPLE_SIMPLE_IMPL_B_H_

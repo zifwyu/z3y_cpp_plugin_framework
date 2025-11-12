@@ -4,9 +4,14 @@
  * @author 孙鹏宇
  * @date 2025-11-10
  *
- * [已修正]：
- * 1. RegisterComponent 和 RegisterService 现在只调用
- * 一次 IPluginRegistry::RegisterComponent，并传入所有参数。
+ * [修改]：
+ * 1.
+ * RegisterComponent/RegisterService
+ * [修改]
+ * 调用 GetInterfaceDetails()
+ * 并传递 InterfaceDetails
+ * 列表。
+ * 2. 遵从 Google 命名约定
  */
 
 #pragma once
@@ -14,13 +19,17 @@
 #ifndef Z3Y_FRAMEWORK_PLUGIN_REGISTRATION_H_
 #define Z3Y_FRAMEWORK_PLUGIN_REGISTRATION_H_
 
-#include "i_plugin_registry.h"
-#include "plugin_impl.h" // 依赖 PluginImpl 以获取 ImplClass::kClsid
-#include <memory>        // 依赖 std::make_shared
-#include <string>        // 依赖 std::string
+#include "framework/i_plugin_registry.h"
+#include "framework/plugin_impl.h"  // 
+ // [修改] 
+ // 依赖 PluginImpl 
+ // 以获取 ImplClass::kClsid 
+ // 和 GetInterfaceDetails
+#include <memory>                   // 依赖 std::make_shared
+#include <string>                   // 依赖 std::string
+#include <vector>
 
-namespace z3y
-{
+namespace z3y {
     /**
      * @brief [框架便利工具] 自动注册一个“普通组件”(瞬态)。
      *
@@ -29,20 +38,21 @@ namespace z3y
      * @param[in] alias 一个可选的、人类可读的字符串别名。
      */
     template <typename ImplClass>
-    void RegisterComponent(IPluginRegistry* registry, const std::string& alias = "")
-    {
+    void RegisterComponent(IPluginRegistry* registry,
+        const std::string& alias = "") {
         // 1. 自动生成工厂 lambda
-        FactoryFunction factory = []() -> PluginPtr<IComponent>
-            {
-                return std::make_shared<ImplClass>();
+        FactoryFunction factory = []() -> PluginPtr<IComponent> {
+            return std::make_shared<ImplClass>();
             };
 
-        // 2. [修正]：一次性调用
-        registry->RegisterComponent(
-            ImplClass::kClsid,
-            factory,
-            false,              // is_singleton = false
-            alias
+        // 2. [修改]：
+        // 一次性调用，
+        // 并传递 InterfaceDetails 
+        // 列表
+        registry->RegisterComponent(ImplClass::kClsid, std::move(factory),
+            false,  // is_singleton = false
+            alias,
+            ImplClass::GetInterfaceDetails()  // [修改]
         );
     }
 
@@ -54,23 +64,23 @@ namespace z3y
      * @param[in] alias 一个可选的、人类可读的字符串别名。
      */
     template <typename ImplClass>
-    void RegisterService(IPluginRegistry* registry, const std::string& alias = "")
-    {
+    void RegisterService(IPluginRegistry* registry, const std::string& alias = "") {
         // 1. 自动生成工厂 lambda
-        FactoryFunction factory = []() -> PluginPtr<IComponent>
-            {
-                return std::make_shared<ImplClass>();
+        FactoryFunction factory = []() -> PluginPtr<IComponent> {
+            return std::make_shared<ImplClass>();
             };
 
-        // 2. [修正]：一次性调用
-        registry->RegisterComponent(
-            ImplClass::kClsid,
-            factory,
-            true,               // is_singleton = true
-            alias
+        // 2. [修改]：
+        // 一次性调用，
+        // 并传递 InterfaceDetails 
+        // 列表
+        registry->RegisterComponent(ImplClass::kClsid, std::move(factory),
+            true,  // is_singleton = true
+            alias,
+            ImplClass::GetInterfaceDetails()  // [修改]
         );
     }
 
-} // namespace z3y
+}  // namespace z3y
 
-#endif // Z3Y_FRAMEWORK_PLUGIN_REGISTRATION_H_
+#endif  // Z3Y_FRAMEWORK_PLUGIN_REGISTRATION_H_

@@ -1,58 +1,53 @@
 /**
  * @file i_logger.h
- * @brief 定义一个示例性的单例服务接口 ILogger。
+ * @brief 定义 z3y::example::ILogger 接口。
  * @author 孙鹏宇
  * @date 2025-11-10
  *
- * @details
- * 这是一个纯粹的业务接口，它将被实现为一个“单例服务”。
- *
- * [重构 v5.1 - Bug 修复]
- * 1. `ILogger`
- * 现在继承 `public virtual IComponent`。
+ * [修改]
+ * 1.
+ * 使用 Z3Y_DEFINE_INTERFACE
+ * 宏
  * 2.
- * 这是为了配合 `PluginImpl`
- * 解决“钻石继承”
- * 歧义 (C2594)。
+ * 添加 <string>
+ * 3. [修改]
+ * 移入 z3y::example
+ * 命名空间
  */
 
-#ifndef Z3Y_SRC_INTERFACES_EXAMPLE_I_LOGGER_H_
-#define Z3Y_SRC_INTERFACES_EXAMPLE_I_LOGGER_H_
+#pragma once
 
-#include "framework/i_component.h" //
-#include <string>
+#ifndef Z3Y_INTERFACES_EXAMPLE_I_LOGGER_H_
+#define Z3Y_INTERFACES_EXAMPLE_I_LOGGER_H_
 
-namespace z3y
-{
-    /**
-     * @class ILogger
-     * @brief 一个简单的单例日志服务接口。
-     *
-     * @design
-     * [Fix]
-     * 必须使用 `public virtual IComponent`
-     * 继承，
-     * 以防止 `LoggerService`
-     * 等实现类
-     * 出现 `IComponent`
-     * 的歧义。
-     */
-    class ILogger : public virtual IComponent // <-- [THE FIX] 
-        //      添加 virtual
-    {
-    public:
-        /**
-         * @brief 虚析构函数。
-         */
-        virtual ~ILogger() = default;
+#include "framework/i_component.h"
+#include "framework/interface_helpers.h" // [新]
+#include <string>  // [FIX]
+
+namespace z3y {
+    namespace example { // [修改]
 
         /**
-         * @brief 一个示例性的业务方法，用于写入日志。
-         * @param[in] message 要记录的消息。
+         * @class ILogger
+         * @brief 一个示例“服务”接口。
          */
-        virtual void Log(const std::string& message) = 0;
-    };
+        class ILogger : public virtual IComponent {
+        public:
+            /**
+             * @brief [修改]
+             * 使用 Z3Y_DEFINE_INTERFACE
+             * 宏
+             */
+            Z3Y_DEFINE_INTERFACE(ILogger, "z3y-example-ILogger-IID-B1B542F8")
 
-} // namespace z3y
+                /**
+                 * @brief 记录一条消息。
+                 * @param[in] message 要记录的字符串。
+                 */
+                virtual void Log(const std::string& message) = 0;
+        };
 
-#endif // Z3Y_SRC_INTERFACES_EXAMPLE_I_LOGGER_H_
+    }  // namespace example
+}  // namespace z3y
+
+#endif  // Z3Y_INTERFACES_EXAMPLE_I_LOGGER_H_

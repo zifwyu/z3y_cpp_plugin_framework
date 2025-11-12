@@ -1,67 +1,70 @@
 /**
  * @file simple_impl_a.h
- * @brief z3y::ISimple 接口的实现类 SimpleImplA 的头文件。
+ * @brief 定义 z3y::example::SimpleImplA (普通组件)。
  * @author 孙鹏宇
  * @date 2025-11-10
  *
- * @details
- * 演示了如何使用 z3y::PluginImpl 模板来实现一个插件组件。
- *
- * @design
- * ClassID (kCSimpleA) 在此头文件中定义，
- * 而不是在 i_simple.h 中。这允许宿主(Host) #include 这个文件
- * 来获取创建此实现所需的信息，而无需污染纯接口文件。
+ * ...
+ * [修改]
+ * 1. [修改]
+ * 移入 z3y::example
+ * 命名空间
+ * 2. [修改] [!!]
+ * Z3Y_DEFINE_COMPONENT_ID
+ * 宏已移回类 *内部*。
+ * 3. [修改] [!!]
+ * 简化 PluginImpl
+ * 继承 (
+ * 移除 kClsid
+ * 模板参数)
  */
 
-#ifndef Z3Y_SRC_PLUGIN_EXAMPLE_SIMPLE_IMPL_A_H_
-#define Z3Y_SRC_PLUGIN_EXAMPLE_SIMPLE_IMPL_A_H_
+#pragma once
 
-#include "framework/plugin_impl.h"
-#include "interfaces_example/i_simple.h" // 依赖 ISimple 接口
+#ifndef Z3Y_PLUGIN_EXAMPLE_SIMPLE_IMPL_A_H_
+#define Z3Y_PLUGIN_EXAMPLE_SIMPLE_IMPL_A_H_
 
-namespace z3y
-{
-    /**
-     * @brief SimpleImplA 实现类的 ClassID。
-     */
-    namespace clsid
-    {
-        constexpr ClassID kCSimpleA =
-            ConstexprHash("z3y-example-csimple-impl-A-UUID");
-    } // namespace clsid
+#include "interfaces_example/i_simple.h"  // 依赖 ISimple
+#include "framework/plugin_impl.h"        // 依赖 PluginImpl
+#include "framework/class_id.h"
+#include "framework/component_helpers.h"  // [新]
+#include <string>
 
-    /**
-     * @class SimpleImplA
-     * @brief ISimple 接口的 *第一个* 具体实现。
-     *
-     * 继承 z3y::PluginImpl 并传入：
-     * 1. ImplClass (自己): SimpleImplA
-     * 2. kClsid: clsid::kCSimpleA
-     * 3. Interfaces...: ISimple
-     */
-    class SimpleImplA : public z3y::PluginImpl<SimpleImplA,
-        clsid::kCSimpleA,
-        ISimple>
-    {
-    public:
-        /**
-         * @brief 构造函数。
-         */
-        SimpleImplA();
+namespace z3y {
+    namespace example { // [修改]
+
+        // --- 1. [修改] ClassId 
+        // 定义已移入类内部 ---
+        // (旧的 namespace clsid 
+        // 已删除)
 
         /**
-         * @brief 析构函数。
+         * @class SimpleImplA
+         * @brief ISimple 接口的一个普通组件实现 ("A")。
          */
-        virtual ~SimpleImplA();
+        class SimpleImplA
+            : public PluginImpl<SimpleImplA,
+            ISimple> // [修改] 
+            // 移除了 kClsid 
+            // 模板参数
+        {
+        public:
+            /**
+             * @brief [新]
+             * 使用 Z3Y_DEFINE_COMPONENT_ID
+             * 定义 kClsid
+             */
+            Z3Y_DEFINE_COMPONENT_ID("z3y-example-CSimpleImplA-UUID-A9407176")
 
-        // --- ISimple 接口的实现 ---
+        public:
+            SimpleImplA();
+            virtual ~SimpleImplA();
 
-        /**
-         * @brief ISimple::Add 接口的实现。
-         */
-        int Add(int a, int b) const override;
-    };
+            // --- ISimple 接口实现 ---
+            std::string GetSimpleString() override;
+        };
 
-} // namespace z3y
+    }  // namespace example
+}  // namespace z3y
 
-#endif // Z3Y_SRC_PLUGIN_EXAMPLE_SIMPLE_IMPL_A_H_
+#endif  // Z3Y_PLUGIN_EXAMPLE_SIMPLE_IMPL_A_H_

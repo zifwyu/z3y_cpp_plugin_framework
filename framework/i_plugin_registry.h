@@ -4,9 +4,16 @@
  * @author 孙鹏宇
  * @date 2025-11-10
  *
- * [已修正]：
- * 1. RegisterComponent 现在原子化地接受 clsid, factory, is_singleton 和 alias。
- * 2. 移除了 RegisterAlias 接口，因为它已合并到 RegisterComponent 中。
+ * [修改]：
+ * 1. [修改]
+ * RegisterComponent
+ * 增加
+ * implemented_interfaces
+ * 参数
+ * 类型从 vector<InterfaceId>
+ * 变为
+ * vector<InterfaceDetails>
+ * 2. 遵从 Google 命名约定
  */
 
 #pragma once
@@ -14,13 +21,14 @@
 #ifndef Z3Y_FRAMEWORK_I_PLUGIN_REGISTRY_H_
 #define Z3Y_FRAMEWORK_I_PLUGIN_REGISTRY_H_
 
-#include "class_id.h"
-#include "i_component.h"
+#include "framework/class_id.h"
+#include "framework/i_component.h"
+#include "framework/i_plugin_query.h" // [新] 依赖 InterfaceDetails
 #include <functional>
 #include <string>
+#include <vector>
 
-namespace z3y
-{
+namespace z3y {
 
     /**
      * @typedef FactoryFunction
@@ -32,8 +40,7 @@ namespace z3y
      * @class IPluginRegistry
      * @brief [框架核心] 插件注册表接口。
      */
-    class IPluginRegistry
-    {
+    class IPluginRegistry {
     public:
         /**
          * @brief 虚析构函数。
@@ -42,6 +49,9 @@ namespace z3y
 
         /**
          * @brief 插件调用此函数来注册一个组件类。
+         * [修改]
+         * 参数类型改为
+         * std::vector<InterfaceDetails>
          *
          * @param[in] clsid 类的唯一ID (uint64_t)。
          * @param[in] factory 一个 lambda，用于创建该类的新实例。
@@ -49,14 +59,17 @@ namespace z3y
          * - false: 注册为普通组件 ("工具")。
          * - true: 注册为“单例服务” ("公共设施")。
          * @param[in] alias 一个可选的、人类可读的字符串别名。
-         * 如果为空，则不注册别名。
+         * @param[in] implemented_interfaces [修改]
+         * 此组件实现的所有接口详情 (Id
+         * 和 Name)
+         * 列表。
          */
-        virtual void RegisterComponent(ClassID clsid,
-            FactoryFunction factory,
-            bool is_singleton,
-            const std::string& alias) = 0;
+        virtual void RegisterComponent(
+            ClassId clsid, FactoryFunction factory, bool is_singleton,
+            const std::string& alias,
+            std::vector<InterfaceDetails> implemented_interfaces) = 0;
     };
 
-} // namespace z3y
+}  // namespace z3y
 
-#endif // Z3Y_FRAMEWORK_I_PLUGIN_REGISTRY_H_
+#endif  // Z3Y_FRAMEWORK_I_PLUGIN_REGISTRY_H_

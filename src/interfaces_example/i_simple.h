@@ -1,60 +1,53 @@
 /**
  * @file i_simple.h
- * @brief 定义一个简单的示例接口 ISimple。
+ * @brief 定义 z3y::example::ISimple 接口。
  * @author 孙鹏宇
  * @date 2025-11-10
  *
- * @details
- * 这是一个纯粹的业务接口，演示了框架的用法。
- *
- * [重构 v5.1 - Bug 修复]
- * 1. `ISimple`
- * 现在继承 `public virtual IComponent`。
+ * [修改]
+ * 1.
+ * 使用 Z3Y_DEFINE_INTERFACE
+ * 宏
  * 2.
- * 这是为了配合 `PluginImpl`
- * 解决“钻石继承”
- * 歧义 (C2594)。
+ * 添加 <string>
+ * 3. [修改]
+ * 移入 z3y::example
+ * 命名空间
  */
 
-#ifndef Z3Y_SRC_INTERFACES_EXAMPLE_I_SIMPLE_H_
-#define Z3Y_SRC_INTERFACES_EXAMPLE_I_SIMPLE_H_
+#pragma once
 
-#include "framework/i_component.h" // 依赖 z3y::IComponent
-#include "framework/class_id.h"    // 依赖 z3y::ClassID
+#ifndef Z3Y_INTERFACES_EXAMPLE_I_SIMPLE_H_
+#define Z3Y_INTERFACES_EXAMPLE_I_SIMPLE_H_
 
-namespace z3y
-{
-    /**
-     * @class ISimple
-     * @brief 一个简单的示例接口。
-     *
-     * @design
-     * [Fix]
-     * 必须使用 `public virtual IComponent`
-     * 继承，
-     * 以防止 `SimpleImplA`
-     * 等实现类
-     * 出现 `IComponent`
-     * 的歧义。
-     */
-    class ISimple : public virtual IComponent // <-- [THE FIX] 
-        //      添加 virtual
-    {
-    public:
-        /**
-         * @brief 虚析构函数。
-         */
-        virtual ~ISimple() = default;
+#include "framework/i_component.h"
+#include "framework/interface_helpers.h" // [新]
+#include <string>  // [FIX]
+
+namespace z3y {
+    namespace example { // [修改]
 
         /**
-         * @brief 一个示例性的业务方法。
-         * @param[in] a 第一个加数
-         * @param[in] b 第二个加数
-         * @return a 和 b 的和。
+         * @class ISimple
+         * @brief 一个示例“组件”接口。
          */
-        virtual int Add(int a, int b) const = 0;
-    };
+        class ISimple : public virtual IComponent {
+        public:
+            /**
+             * @brief [修改]
+             * 使用 Z3Y_DEFINE_INTERFACE
+             * 宏
+             */
+            Z3Y_DEFINE_INTERFACE(ISimple, "z3y-example-ISimple-IID-A4736128")
 
-} // namespace z3y
+                /**
+                 * @brief 获取一个示例字符串。
+                 * @return 一个 std::string。
+                 */
+                virtual std::string GetSimpleString() = 0;
+        };
 
-#endif // Z3Y_SRC_INTERFACES_EXAMPLE_I_SIMPLE_H_
+    }  // namespace example
+}  // namespace z3y
+
+#endif  // Z3Y_INTERFACES_EXAMPLE_I_SIMPLE_H_

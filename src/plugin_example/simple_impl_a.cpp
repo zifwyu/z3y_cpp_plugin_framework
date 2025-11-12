@@ -1,40 +1,42 @@
 /**
  * @file simple_impl_a.cpp
- * @brief z3y::ISimple 接口的实现类 SimpleImplA 的源文件。
+ * @brief SimpleImplA 类的实现。
  * @author 孙鹏宇
  * @date 2025-11-10
+ *
+ * [修改]
+ * 1. [修改]
+ * 移入 z3y::example
+ * 命名空间
+ * 2. [FIX]
+ * 移除
+ * 3. [FIX]
+ * 移除错误的 'Add'
+ * 函数
  */
 
 #include "simple_impl_a.h"
-#include <iostream>       // 用于在控制台打印日志
+#include <iostream>
+#include <sstream>
 
-namespace z3y
-{
+namespace z3y {
+    namespace example { // [修改]
 
-    /**
-     * @brief 构造函数。
-     */
-    SimpleImplA::SimpleImplA()
-    {
-        std::cout << "[plugin_example]: SimpleImplA created (构造函数)." << std::endl;
-    }
+        SimpleImplA::SimpleImplA() {
+            std::cout << "  [SimpleImplA] Instance Created (Constructor)."
+                << std::endl;
+        }
 
-    /**
-     * @brief 析构函数。
-     */
-    SimpleImplA::~SimpleImplA()
-    {
-        std::cout << "[plugin_example]: SimpleImplA destroyed (析构函数)." << std::endl;
-    }
+        SimpleImplA::~SimpleImplA() {
+            std::cout << "  [SimpleImplA] Instance Destroyed (Destructor)."
+                << std::endl;
+        }
 
-    /**
-     * @brief ISimple::Add 接口的实现。
-     */
-    int SimpleImplA::Add(int a, int b) const
-    {
-        std::cout << "[plugin_example]: SimpleImplA::Add() called." << std::endl;
-        // 返回一个独特的值以示区别
-        return a + b + 100;
-    }
+        // --- ISimple 接口实现 ---
 
-} // namespace z3y
+        std::string SimpleImplA::GetSimpleString() {
+            return "Hello from SimpleImplA";
+        }
+
+    }  // namespace example
+}  // namespace z3y

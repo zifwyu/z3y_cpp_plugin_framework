@@ -1,64 +1,68 @@
 /**
  * @file logger_service.h
- * @brief z3y::ILogger 接口的实现类 LoggerService 的头文件。
+ * @brief 定义 z3y::example::LoggerService (单例)
  * @author 孙鹏宇
  * @date 2025-11-10
  *
- * @details
- * 演示了如何实现一个“单例服务”组件。
- * ClassID (kCLoggerService) 在此头文件中定义。
+ * [修改]
+ * ...
+ * 3. [修改] [!!]
+ * Z3Y_DEFINE_COMPONENT_ID
+ * 宏已移回类 *内部*。
+ * 4. [修改] [!!]
+ * 简化 PluginImpl
+ * 继承 (
+ * 移除 kClsid
+ * 模板参数)
  */
 
-#ifndef Z3Y_SRC_PLUGIN_EXAMPLE_LOGGER_SERVICE_H_
-#define Z3Y_SRC_PLUGIN_EXAMPLE_LOGGER_SERVICE_H_
+#pragma once
 
-#include "framework/plugin_impl.h"
-#include "interfaces_example/i_logger.h" // 依赖 ILogger 接口
-#include <mutex>                         // 包含 mutex 以实现线程安全的日志记录
+#ifndef Z3Y_PLUGIN_EXAMPLE_LOGGER_SERVICE_H_
+#define Z3Y_PLUGIN_EXAMPLE_LOGGER_SERVICE_H_
 
-namespace z3y
-{
-    /**
-     * @brief LoggerService 实现类的 ClassID。
-     */
-    namespace clsid
-    {
-        constexpr ClassID kCLoggerService =
-            ConstexprHash("z3y-example-cloggerservice-uuid-8C49F3D0-4034-4166-85D4-38E70E83D59D");
-    } // namespace clsid
+#include "interfaces_example/i_logger.h"  // 依赖 ILogger
+#include "framework/plugin_impl.h"        // 依赖 PluginImpl
+#include "framework/class_id.h"
+#include "framework/component_helpers.h"  // [新]
+#include <mutex>
 
-    /**
-     * @class LoggerService
-     * @brief z3y::ILogger 接口的一个具体实现，将被注册为单例。
-     */
-    class LoggerService : public z3y::PluginImpl<LoggerService,
-        clsid::kCLoggerService,
-        ILogger>
-    {
-    public:
-        /**
-         * @brief 构造函数。
-         */
-        LoggerService();
+namespace z3y {
+    namespace example { // [修改]
+
+        // --- 1. [修改] ClassId 
+        // 定义已移入类内部 ---
 
         /**
-         * @brief 析构函数。
+         * @class LoggerService
+         * @brief ILogger 接口的单例实现。
          */
-        virtual ~LoggerService();
+        class LoggerService
+            : public PluginImpl<LoggerService,
+            ILogger> // [修改] 
+            // 移除了 kClsid 
+            // 模板参数
+        {
+        public:
+            /**
+             * @brief [新]
+             * 使用 Z3Y_DEFINE_COMPONENT_ID
+             * 定义 kClsid
+             */
+            Z3Y_DEFINE_COMPONENT_ID("z3y-example-CLoggerService-UUID-C50A10B4")
 
-        // --- ILogger 接口的实现 ---
+        public:
+            LoggerService();
+            virtual ~LoggerService();
 
-        /**
-         * @brief ILogger::Log 接口的实现。
-         * @param[in] message 要记录的消息。
-         */
-        void Log(const std::string& message) override;
+            // --- ILogger 接口实现 ---
+            void Log(const std::string& message) override;
 
-    private:
-        //! 用于保护 std::cout 的互斥锁，确保日志输出不会交叉
-        mutable std::mutex mutex_;
-    };
+        private:
+            std::mutex mutex_;
+        };
 
-} // namespace z3y
+    }  // namespace example
+}  // namespace z3y
 
-#endif // Z3Y_SRC_PLUGIN_EXAMPLE_LOGGER_SERVICE_H_
+#endif  // Z3Y_PLUGIN_EXAMPLE_LOGGER_SERVICE_H_
