@@ -1,14 +1,14 @@
 /**
  * @file uuid_gen.cpp
- * @brief ÊµÏÖ UUID v4 Éú³ÉÆ÷¡£
- * @author ËïÅôÓî
+ * @brief å®ç° UUID v4 ç”Ÿæˆå™¨ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  */
 
 #include "uuid_gen.h"
-#include <random>    // C++11 ±ê×¼¿â
-#include <sstream>   // C++ ±ê×¼¿â
-#include <iomanip>   // C++ ±ê×¼¿â
+#include <random>    // C++11 æ ‡å‡†åº“
+#include <sstream>   // C++ æ ‡å‡†åº“
+#include <iomanip>   // C++ æ ‡å‡†åº“
 #include <cstdint>
 
 namespace z3y
@@ -17,25 +17,25 @@ namespace z3y
     {
         std::string generate_uuid_v4()
         {
-            // 1. »ñÈ¡Ò»¸ö¸ßÖÊÁ¿µÄËæ»úÊıÖÖ×Ó
+            // 1. è·å–ä¸€ä¸ªé«˜è´¨é‡çš„éšæœºæ•°ç§å­
             std::random_device rd;
 
-            // 2. Ê¹ÓÃ Mersenne Twister ÒıÇæ
+            // 2. ä½¿ç”¨ Mersenne Twister å¼•æ“
             std::mt19937_64 gen(rd());
 
-            // 3. ¶¨ÒåÒ»¸ö¾ùÔÈ·Ö²¼£¬ÓÃÓÚÉú³É 64 Î»ÎŞ·ûºÅÕûÊı
+            // 3. å®šä¹‰ä¸€ä¸ªå‡åŒ€åˆ†å¸ƒï¼Œç”¨äºç”Ÿæˆ 64 ä½æ— ç¬¦å·æ•´æ•°
             std::uniform_int_distribution<uint64_t> dis;
 
-            // 4. Éú³É 128 Î»µÄËæ»úÊı¾İ (Á½¸ö 64 Î»)
+            // 4. ç”Ÿæˆ 128 ä½çš„éšæœºæ•°æ® (ä¸¤ä¸ª 64 ä½)
             uint64_t data1 = dis(gen);
             uint64_t data2 = dis(gen);
 
-            // 5. ÉèÖÃ UUID v4 µÄÌØ¶¨Î» (°æ±¾ 4)
+            // 5. è®¾ç½® UUID v4 çš„ç‰¹å®šä½ (ç‰ˆæœ¬ 4)
             data1 = (data1 & 0xFFFFFFFFFFFF0FFFULL) | 0x0000000000004000ULL;
-            // 6. ÉèÖÃ±äÌåÎ» (variant 1)
+            // 6. è®¾ç½®å˜ä½“ä½ (variant 1)
             data2 = (data2 & 0x3FFFFFFFFFFFFFFFULL) | 0x8000000000000000ULL;
 
-            // 7. ¸ñÊ½»¯Îª±ê×¼ UUID ×Ö·û´®
+            // 7. æ ¼å¼åŒ–ä¸ºæ ‡å‡† UUID å­—ç¬¦ä¸²
             std::stringstream ss;
             ss << std::hex << std::setfill('0');
 

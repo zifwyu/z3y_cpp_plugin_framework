@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\framework\auto_registration.h" />
     <ClInclude Include="..\..\..\framework\class_id.h" />
     <ClInclude Include="..\..\..\framework\component_helpers.h" />
     <ClInclude Include="..\..\..\framework\connection_type.h" />

@@ -1,13 +1,13 @@
 /**
  * @file z3y_plugin_sdk.h
- * @brief z3y ²å¼ş¿ò¼Ü - ²å¼ş¿ª·¢¹¤¾ß°ü (SDK)
+ * @brief z3y æ’ä»¶æ¡†æ¶ - æ’ä»¶å¼€å‘å·¥å…·åŒ… (SDK)
  * @details
- * ...
- * [ĞŞ¸Ä]
- * 1.
- * Ìí¼ÓÁËĞÂµÄ¸¨ÖúºêÍ·ÎÄ¼ş
- * (interface_helpers.h,
- * component_helpers.h, event_helpers.h)
+ * æ’ä»¶å¼€å‘è€…åªéœ€è¦åŒ…å«è¿™ä¸€ä¸ªå¤´æ–‡ä»¶ï¼Œ
+ * å³å¯å®šä¹‰æ¥å£ã€å®ç°ç±»ã€ä½¿ç”¨è¾…åŠ©å®å’Œè‡ªåŠ¨æ³¨å†Œã€‚
+ * [ä¿®æ”¹] [!!]
+ * æœ€ç»ˆå½’ä¸€åŒ–ï¼Œ
+ * æˆä¸ºæ’ä»¶å¼€å‘è€…çš„
+ * * * * * å¤´æ–‡ä»¶ã€‚
  */
 
 #pragma once
@@ -15,36 +15,34 @@
 #ifndef Z3Y_PLUGIN_SDK_H_
 #define Z3Y_PLUGIN_SDK_H_
 
- // 1. ºËĞÄÀàĞÍ (ÊµÏÖ²å¼ş±ØĞë)
+ // 1. æ ¸å¿ƒç±»å‹ (IComponent 
+ // / ClassId / PluginImpl)
 #include "framework/i_component.h"
 #include "framework/class_id.h"
 #include "framework/plugin_impl.h"
 
-// 2. ×¢²á (ÊµÏÖ plugin_entry ±ØĞë)
+// 2. å®è¾…åŠ©å’Œæ¥å£å®šä¹‰ (
+// Z3Y_DEFINE_INTERFACE 
+// )
+#include "framework/interface_helpers.h"
+#include "framework/component_helpers.h"
+#include "framework/event_helpers.h"
+
+// 3. æ³¨å†Œ (
+// IPluginRegistry / Registration Helpers)
 #include "framework/i_plugin_registry.h"
 #include "framework/plugin_registration.h"
+#include "framework/auto_registration.h" // [!! 
+                                         // æ ¸å¿ƒ !!] 
+                                         // 
+                                         // 
 
-// 3. [!! ĞÂÔö !!] 
-//    ¸¨Öúºê (
-//    ¼«´óÌáÉıÒ×ÓÃĞÔ
-//    )
-#include "framework/interface_helpers.h"  // 
-                                          // 
-                                          // 
-                                          // Ìá¹© Z3Y_DEFINE_INTERFACE
-#include "framework/component_helpers.h"  // 
-                                          // 
-                                          // 
-                                          // Ìá¹© Z3Y_DEFINE_COMPONENT_ID
-#include "framework/event_helpers.h"      // 
-                                          // 
-                                          // 
-                                          // Ìá¹© Z3Y_DEFINE_EVENT
-
-// 4. 
-//    ¿ÉÑ¡µÄ¿ò¼Ü·şÎñ (Îª¸´ÔÓ²å¼şÌá¹©)
+// 4. å¯é€‰çš„æ¡†æ¶æœåŠ¡ (
+// IEventBus / PluginCast
+// )
 #include "framework/plugin_cast.h"
 #include "framework/i_event_bus.h"
 #include "framework/connection_type.h"
+#include "framework/plugin_exceptions.h" 
 
 #endif // Z3Y_PLUGIN_SDK_H_

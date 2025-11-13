@@ -1,14 +1,14 @@
 /**
  * @file plugin_impl.h
- * @brief ¶¨Òå z3y::PluginImpl Ä£°åÖúÊÖÀà¡£
- * @author ËïÅôÓî
+ * @brief å®šä¹‰ z3y::PluginImpl æ¨¡æ¿åŠ©æ‰‹ç±»ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
  * ...
- * 12. [ĞŞ¸Ä] [!!]
+ * 12. [ä¿®æ”¹] [!!]
  * QueryRecursive
- * ºÍ QueryInterfaceRaw
- * ÏÖÔÚ½ÓÊÜ²¢ÉèÖÃ
+ * å’Œ QueryInterfaceRaw
+ * ç°åœ¨æ¥å—å¹¶è®¾ç½®
  * InstanceError&
  * out_result
  */
@@ -18,27 +18,27 @@
 #ifndef Z3Y_FRAMEWORK_PLUGIN_IMPL_H_
 #define Z3Y_FRAMEWORK_PLUGIN_IMPL_H_
 
-#include "framework/i_component.h"  // ÒÀÀµ z3y::IComponent
-#include "framework/class_id.h"     // ÒÀÀµ z3y::ClassId
-#include "framework/i_plugin_query.h" // [ĞÂ] ÒÀÀµ InterfaceDetails
+#include "framework/i_component.h"  // ä¾èµ– z3y::IComponent
+#include "framework/class_id.h"     // ä¾èµ– z3y::ClassId
+#include "framework/i_plugin_query.h" // [æ–°] ä¾èµ– InterfaceDetails
 #include "framework/plugin_exceptions.h"     // [!! 
- // ĞÂÔö !!]
-#include <type_traits>    // ÒÀÀµ std::is_base_of_v (C++17)
-#include <memory>         // ÒÀÀµ std::enable_shared_from_this
-#include <vector>         // [ĞÂÔö]
-#include <type_traits>    // [ĞÂ] ÓÃÓÚ SFINAE
+ // æ–°å¢ !!]
+#include <type_traits>    // ä¾èµ– std::is_base_of_v (C++17)
+#include <memory>         // ä¾èµ– std::enable_shared_from_this
+#include <vector>         // [æ–°å¢]
+#include <type_traits>    // [æ–°] ç”¨äº SFINAE
 
 namespace z3y {
     /**
      * @class PluginImpl
-     * @brief [¿ò¼ÜºËĞÄ] ²å¼şÊµÏÖÀàµÄÄ£°åÖúÊÖ (Ê¹ÓÃ CRTP Ä£Ê½)¡£
+     * @brief [æ¡†æ¶æ ¸å¿ƒ] æ’ä»¶å®ç°ç±»çš„æ¨¡æ¿åŠ©æ‰‹ (ä½¿ç”¨ CRTP æ¨¡å¼)ã€‚
      *
      * @tparam ImplClass
-     * ×îÖÕµÄÊµÏÖÀàÃû (ÀıÈç SimpleImpl)¡£
+     * æœ€ç»ˆçš„å®ç°ç±»å (ä¾‹å¦‚ SimpleImpl)ã€‚
      * @tparam Interfaces...
-     * ¸ÃÀàËùÊµÏÖµÄËùÓĞ z3y::IComponent
-     * ½Ó¿Ú
-     * (ÀıÈç ISimple, ISimple2)¡£
+     * è¯¥ç±»æ‰€å®ç°çš„æ‰€æœ‰ z3y::IComponent
+     * æ¥å£
+     * (ä¾‹å¦‚ ISimple, ISimple2)ã€‚
      */
     template <typename ImplClass, typename... Interfaces>
     class PluginImpl : public virtual IComponent,
@@ -51,13 +51,13 @@ namespace z3y {
         // static constexpr ClassId kClsid = ImplClass::kClsid;
 
     private:
-        // --- ÄÚ²¿¸¨ÖúÄ£°å ---
+        // --- å†…éƒ¨è¾…åŠ©æ¨¡æ¿ ---
 
         /**
-         * @brief [ĞÂ] [C++17 SFINAE]
-         * ¼ì²é T
-         * ÊÇ·ñÓĞ kClsid
-         * ³ÉÔ±
+         * @brief [æ–°] [C++17 SFINAE]
+         * æ£€æŸ¥ T
+         * æ˜¯å¦æœ‰ kClsid
+         * æˆå‘˜
          */
         template<typename T, typename = std::void_t<>>
         struct has_kClsid : std::false_type {};
@@ -65,11 +65,11 @@ namespace z3y {
         struct has_kClsid<T, std::void_t<decltype(T::kClsid)>> : std::true_type {};
 
         /**
-         * @brief [ĞÂ]
-         * ±àÒëÆÚ¼ì²é£º
-         * È·±£ ImplClass
-         * ¶¨ÒåÁË kClsid
-         * (Í¨¹ı Z3Y_DEFINE_COMPONENT_ID)
+         * @brief [æ–°]
+         * ç¼–è¯‘æœŸæ£€æŸ¥ï¼š
+         * ç¡®ä¿ ImplClass
+         * å®šä¹‰äº† kClsid
+         * (é€šè¿‡ Z3Y_DEFINE_COMPONENT_ID)
          */
         template <typename T = ImplClass>
         static constexpr bool CheckHasClsid() {
@@ -88,11 +88,11 @@ namespace z3y {
 
 
         /**
-         * @brief ±àÒëÆÚ¼ì²é£º
-         * [ĞŞ¸Ä]
-         * ¼ì²é kVersionMajor
-         * ºÍ kVersionMinor
-         * ÊÇ·ñ´æÔÚ
+         * @brief ç¼–è¯‘æœŸæ£€æŸ¥ï¼š
+         * [ä¿®æ”¹]
+         * æ£€æŸ¥ kVersionMajor
+         * å’Œ kVersionMinor
+         * æ˜¯å¦å­˜åœ¨
          */
         template <typename First, typename... Rest>
         static constexpr bool AllDeriveFromIComponent() {
@@ -100,19 +100,19 @@ namespace z3y {
                 "Template parameter pack 'Interfaces...' must all derive "
                 "from z3y::IComponent.");
 
-            // ¼ì²é kIid
+            // æ£€æŸ¥ kIid
             static_assert(
                 std::is_same_v<decltype(First::kIid), const InterfaceId>,
                 "Interface 'First' must define 'static constexpr "
                 "z3y::InterfaceId kIid'. (Hint: Use Z3Y_DEFINE_INTERFACE)");
 
-            // ¼ì²é kName
+            // æ£€æŸ¥ kName
             static_assert(
                 std::is_same_v<decltype(First::kName), const char* const>,
                 "Interface 'First' must define 'static constexpr const "
                 "char* kName'. (Hint: Use Z3Y_DEFINE_INTERFACE)");
 
-            // [ĞÂ] ¼ì²é°æ±¾
+            // [æ–°] æ£€æŸ¥ç‰ˆæœ¬
             static_assert(
                 std::is_same_v<decltype(First::kVersionMajor), const uint32_t>,
                 "Interface 'First' must define 'static constexpr const "
@@ -130,20 +130,20 @@ namespace z3y {
         }
 
         /**
-         * @brief [ĞŞ¸Ä]
-         * ±àÒëÆÚµİ¹é£º
+         * @brief [ä¿®æ”¹]
+         * ç¼–è¯‘æœŸé€’å½’ï¼š
          * QueryInterfaceRaw
-         * µÄºËĞÄÊµÏÖ¡£
-         * [ĞŞ¸Ä]
-         * Ôö¼ÓÁË SemVer
-         * ¼ì²éÂß¼­²¢ÉèÖÃ
+         * çš„æ ¸å¿ƒå®ç°ã€‚
+         * [ä¿®æ”¹]
+         * å¢åŠ äº† SemVer
+         * æ£€æŸ¥é€»è¾‘å¹¶è®¾ç½®
          * out_result
-         * ¡£
+         * ã€‚
          */
         template <typename First, typename... Rest>
         void* QueryRecursive(InterfaceId iid, uint32_t host_major,
             uint32_t host_minor, InstanceError& out_result) { // [!! 
-            // ĞŞ¸Ä !!]
+            // ä¿®æ”¹ !!]
 
             if (iid == First::kIid) {
 
@@ -151,25 +151,25 @@ namespace z3y {
                 const uint32_t my_minor = First::kVersionMinor;
 
                 // 1. 
-                //    Ö÷°æ±¾²»Æ¥Åä
+                //    ä¸»ç‰ˆæœ¬ä¸åŒ¹é…
                 if (my_major != host_major) {
                     out_result = InstanceError::kErrorVersionMajorMismatch; // [!! 
-                    // ĞŞ¸Ä !!]
+                    // ä¿®æ”¹ !!]
                     return nullptr;
                 }
 
                 // 2. 
-                //    ´Î°æ±¾¹ıµÍ
+                //    æ¬¡ç‰ˆæœ¬è¿‡ä½
                 if (my_minor < host_minor) {
                     out_result = InstanceError::kErrorVersionMinorTooLow; // [!! 
-                    // ĞŞ¸Ä !!]
+                    // ä¿®æ”¹ !!]
                     return nullptr;
                 }
 
                 // 
-                // ³É¹¦
+                // æˆåŠŸ
                 out_result = InstanceError::kSuccess; // [!! 
-                // ĞŞ¸Ä !!]
+                // ä¿®æ”¹ !!]
                 return static_cast<First*>(static_cast<ImplClass*>(this));
             }
 
@@ -178,25 +178,25 @@ namespace z3y {
             }
 
             out_result = InstanceError::kErrorInterfaceNotImpl; // [!! 
-            // ĞŞ¸Ä !!]
-            return nullptr;  // ±éÀúÍê±Ï£¬Î´ÕÒµ½
+            // ä¿®æ”¹ !!]
+            return nullptr;  // éå†å®Œæ¯•ï¼Œæœªæ‰¾åˆ°
         }
 
         /**
-         * @brief [ĞŞ¸Ä] ±àÒëÆÚµİ¹é£º
-         * GetInterfaceDetails µÄºËĞÄÊµÏÖ¡£
+         * @brief [ä¿®æ”¹] ç¼–è¯‘æœŸé€’å½’ï¼š
+         * GetInterfaceDetails çš„æ ¸å¿ƒå®ç°ã€‚
          */
         template <typename First, typename... Rest>
         static void CollectDetailsRecursive(
             std::vector<InterfaceDetails>& details) {
 
             // (
-            // ÉÏÒ»ÂÖÒÑĞŞ¸Ä
+            // ä¸Šä¸€è½®å·²ä¿®æ”¹
             // )
             details.push_back(InterfaceDetails{
                 First::kIid,
                 First::kName,
-                InterfaceVersion { // [ĞÂ]
+                InterfaceVersion { // [æ–°]
                     First::kVersionMajor,
                     First::kVersionMinor
                 }
@@ -209,61 +209,61 @@ namespace z3y {
 
     public:
         /**
-         * @brief ×Ô¶¯ÊµÏÖµÄ
+         * @brief è‡ªåŠ¨å®ç°çš„
          * IComponent::QueryInterfaceRaw()
-         * Ğéº¯Êı¡£
+         * è™šå‡½æ•°ã€‚
          * [!!
-         * ĞŞ¸Ä !!]
-         * ¸üĞÂÇ©Ãû
+         * ä¿®æ”¹ !!]
+         * æ›´æ–°ç­¾å
          */
         void* QueryInterfaceRaw(InterfaceId iid, uint32_t major,
             uint32_t minor, InstanceError& out_result) override { // [!! 
-            // ĞŞ¸Ä !!]
+            // ä¿®æ”¹ !!]
 
             [[maybe_unused]] constexpr bool check_clsid = CheckHasClsid();
             [[maybe_unused]] constexpr bool check_iids =
                 AllDeriveFromIComponent<Interfaces...>();
 
             // 
-            // ¼ì²é IComponent 
-            // ×ÔÉí
+            // æ£€æŸ¥ IComponent 
+            // è‡ªèº«
             if (iid == IComponent::kIid) {
                 const uint32_t my_major = IComponent::kVersionMajor;
                 const uint32_t my_minor = IComponent::kVersionMinor;
 
                 if (my_major != major) {
                     out_result = InstanceError::kErrorVersionMajorMismatch; // [!! 
-                    // ĞŞ¸Ä !!]
+                    // ä¿®æ”¹ !!]
                     return nullptr;
                 }
                 if (my_minor < minor) {
                     out_result = InstanceError::kErrorVersionMinorTooLow; // [!! 
-                    // ĞŞ¸Ä !!]
+                    // ä¿®æ”¹ !!]
                     return nullptr;
                 }
 
                 out_result = InstanceError::kSuccess; // [!! 
-                // ĞŞ¸Ä !!]
+                // ä¿®æ”¹ !!]
                 return static_cast<IComponent*>(
                     static_cast<ImplClass*>(this));
             }
 
             // 
-            // µİ¹é¼ì²éÆäËû½Ó¿Ú
+            // é€’å½’æ£€æŸ¥å…¶ä»–æ¥å£
             if constexpr (sizeof...(Interfaces) > 0) {
                 return QueryRecursive<Interfaces...>(iid, major, minor, out_result);
             }
 
             // 
-            // Î´ÊµÏÖ
+            // æœªå®ç°
             out_result = InstanceError::kErrorInterfaceNotImpl; // [!! 
-            // ĞŞ¸Ä !!]
+            // ä¿®æ”¹ !!]
             return nullptr;
         }
 
         /**
-         * @brief [ĞŞ¸Ä]
-         * ¾²Ì¬º¯Êı£¬
+         * @brief [ä¿®æ”¹]
+         * é™æ€å‡½æ•°ï¼Œ
          * ...
          */
         static std::vector<InterfaceDetails> GetInterfaceDetails() {
@@ -275,13 +275,13 @@ namespace z3y {
             std::vector<InterfaceDetails> details;
 
             // (
-            // ÉÏÒ»ÂÖÒÑĞŞ¸Ä
+            // ä¸Šä¸€è½®å·²ä¿®æ”¹
             // )
             details.push_back(
                 InterfaceDetails{
                     IComponent::kIid,
                     IComponent::kName,
-                    InterfaceVersion { // [ĞÂ]
+                    InterfaceVersion { // [æ–°]
                         IComponent::kVersionMajor,
                         IComponent::kVersionMinor
                     }

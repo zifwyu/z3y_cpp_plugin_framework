@@ -1,10 +1,10 @@
 /**
  * @file plugin_exceptions.h
- * @brief [ĞÂ]
- * ¶¨Òå z3y::InstanceError
- * Ã¶¾ÙºÍ z3y::PluginException
- * Òì³£Àà¡£
- * @author (ÄúµÄÃû×Ö)
+ * @brief [æ–°]
+ * å®šä¹‰ z3y::InstanceError
+ * æšä¸¾å’Œ z3y::PluginException
+ * å¼‚å¸¸ç±»ã€‚
+ * @author (æ‚¨çš„åå­—)
  * @date 2025-11-13
  */
 
@@ -23,121 +23,121 @@ namespace z3y {
      * @enum InstanceError
      * @brief
      * GetService
-     * ºÍ CreateInstance
-     * µÄÏêÏ¸´íÎóÂë¡£
+     * å’Œ CreateInstance
+     * çš„è¯¦ç»†é”™è¯¯ç ã€‚
      */
     enum class InstanceError : uint32_t {
         /**
          * @brief
-         * ³É¹¦
+         * æˆåŠŸ
          * (
-         * ÄÚ²¿Ê¹ÓÃ£¬
-         * ²»»áÅ×³ö
-         * )¡£
+         * å†…éƒ¨ä½¿ç”¨ï¼Œ
+         * ä¸ä¼šæŠ›å‡º
+         * )ã€‚
          */
         kSuccess = 0,
 
         /**
          * @brief
-         * ´íÎó£º
-         * Ìá¹©µÄ±ğÃû (Alias)
-         * Î´ÔÚ×¢²á±íÖĞÕÒµ½¡£
+         * é”™è¯¯ï¼š
+         * æä¾›çš„åˆ«å (Alias)
+         * æœªåœ¨æ³¨å†Œè¡¨ä¸­æ‰¾åˆ°ã€‚
          */
         kErrorAliasNotFound = 1,
 
         /**
          * @brief
-         * ´íÎó£º
-         * Ìá¹©µÄ ClassId (CLSID)
-         * Î´ÔÚ×¢²á±íÖĞÕÒµ½¡£
+         * é”™è¯¯ï¼š
+         * æä¾›çš„ ClassId (CLSID)
+         * æœªåœ¨æ³¨å†Œè¡¨ä¸­æ‰¾åˆ°ã€‚
          */
         kErrorClsidNotFound = 2,
 
         /**
          * @brief
-         * ´íÎó£º
+         * é”™è¯¯ï¼š
          * GetService
-         * Ê§°Ü£¬
-         * ÒòÎª¸Ã CLSID
-         * ×¢²áÎªÆÕÍ¨×é¼ş
+         * å¤±è´¥ï¼Œ
+         * å› ä¸ºè¯¥ CLSID
+         * æ³¨å†Œä¸ºæ™®é€šç»„ä»¶
          * (
-         * Ó¦Ê¹ÓÃ CreateInstance
-         * )¡£
+         * åº”ä½¿ç”¨ CreateInstance
+         * )ã€‚
          */
         kErrorNotAService = 3,
 
         /**
          * @brief
-         * ´íÎó£º
+         * é”™è¯¯ï¼š
          * CreateInstance
-         * Ê§°Ü£¬
-         * ÒòÎª¸Ã CLSID
-         * ×¢²áÎªµ¥Àı·şÎñ
+         * å¤±è´¥ï¼Œ
+         * å› ä¸ºè¯¥ CLSID
+         * æ³¨å†Œä¸ºå•ä¾‹æœåŠ¡
          * (
-         * Ó¦Ê¹ÓÃ GetService
-         * )¡£
+         * åº”ä½¿ç”¨ GetService
+         * )ã€‚
          */
         kErrorNotAComponent = 4,
 
         /**
          * @brief
-         * ´íÎó£º
-         * ²å¼ş¹¤³§º¯Êı (Factory)
-         * Ö´ĞĞÊ§°Ü
+         * é”™è¯¯ï¼š
+         * æ’ä»¶å·¥å‚å‡½æ•° (Factory)
+         * æ‰§è¡Œå¤±è´¥
          * (
-         * ÀıÈç new
-         * Ê§°Ü·µ»Ø
+         * ä¾‹å¦‚ new
+         * å¤±è´¥è¿”å›
          * nullptr)
-         * ¡£
+         * ã€‚
          */
         kErrorFactoryFailed = 5,
 
         /**
          * @brief
-         * ´íÎó£º
-         * ÀàĞÍ×ª»» (PluginCast)
-         * Ê§°Ü¡£
-         * ×é¼şÎ´ÊµÏÖËùÇëÇóµÄ½Ó¿Ú (IID
-         * ²»Æ¥Åä
-         * )¡£
+         * é”™è¯¯ï¼š
+         * ç±»å‹è½¬æ¢ (PluginCast)
+         * å¤±è´¥ã€‚
+         * ç»„ä»¶æœªå®ç°æ‰€è¯·æ±‚çš„æ¥å£ (IID
+         * ä¸åŒ¹é…
+         * )ã€‚
          */
         kErrorInterfaceNotImpl = 6,
 
         /**
          * @brief
-         * ´íÎó£º
-         * °æ±¾²»¼æÈİ¡£
-         * ²å¼şµÄ½Ó¿ÚÖ÷°æ±¾ (Major)
-         * ÓëËŞÖ÷ (Host)
-         * ÇëÇóµÄÖ÷°æ±¾²»Æ¥Åä¡£
+         * é”™è¯¯ï¼š
+         * ç‰ˆæœ¬ä¸å…¼å®¹ã€‚
+         * æ’ä»¶çš„æ¥å£ä¸»ç‰ˆæœ¬ (Major)
+         * ä¸å®¿ä¸» (Host)
+         * è¯·æ±‚çš„ä¸»ç‰ˆæœ¬ä¸åŒ¹é…ã€‚
          */
         kErrorVersionMajorMismatch = 7,
 
         /**
          * @brief
-         * ´íÎó£º
-         * °æ±¾²»¼æÈİ¡£
-         * ²å¼şµÄ½Ó¿Ú´Î°æ±¾ (Minor)
-         * µÍÓÚËŞÖ÷ (Host)
-         * ÇëÇóµÄ´Î°æ±¾¡£
+         * é”™è¯¯ï¼š
+         * ç‰ˆæœ¬ä¸å…¼å®¹ã€‚
+         * æ’ä»¶çš„æ¥å£æ¬¡ç‰ˆæœ¬ (Minor)
+         * ä½äºå®¿ä¸» (Host)
+         * è¯·æ±‚çš„æ¬¡ç‰ˆæœ¬ã€‚
          */
         kErrorVersionMinorTooLow = 8,
 
         /**
          * @brief
-         * ´íÎó£º
-         * ·¢ÉúÄÚ²¿´íÎó
+         * é”™è¯¯ï¼š
+         * å‘ç”Ÿå†…éƒ¨é”™è¯¯
          * (
-         * ÀıÈçÖ¸ÕëÎª¿Õ
-         * )¡£
+         * ä¾‹å¦‚æŒ‡é’ˆä¸ºç©º
+         * )ã€‚
          */
         kErrorInternal = 9
     };
 
     /**
      * @brief
-     * ½« InstanceError
-     * ×ª»»Îª¿É¶Á×Ö·û´®µÄ¸¨Öúº¯Êı
+     * å°† InstanceError
+     * è½¬æ¢ä¸ºå¯è¯»å­—ç¬¦ä¸²çš„è¾…åŠ©å‡½æ•°
      */
     inline std::string ResultToString(InstanceError error) {
         // 
@@ -166,18 +166,18 @@ namespace z3y {
     /**
      * @class PluginException
      * @brief
-     * ¿ò¼ÜÔÚ GetService/CreateInstance
-     * Ê§°ÜÊ±Å×³öµÄ±ê×¼Òì³£¡£
+     * æ¡†æ¶åœ¨ GetService/CreateInstance
+     * å¤±è´¥æ—¶æŠ›å‡ºçš„æ ‡å‡†å¼‚å¸¸ã€‚
      */
     class PluginException : public std::exception {
     public:
         /**
          * @brief
-         * ¹¹Ôìº¯Êı
+         * æ„é€ å‡½æ•°
          * @param[in] error
-         * ÏêÏ¸µÄ´íÎóÂë
+         * è¯¦ç»†çš„é”™è¯¯ç 
          * @param[in] message
-         * ¿ÉÑ¡µÄÉÏÏÂÎÄÏûÏ¢
+         * å¯é€‰çš„ä¸Šä¸‹æ–‡æ¶ˆæ¯
          */
         PluginException(InstanceError error, const std::string& message = "")
             : error_(error), message_(message) {
@@ -198,8 +198,8 @@ namespace z3y {
 
         /**
          * @brief
-         * »ñÈ¡ std::exception
-         * ±ê×¼´íÎóÏûÏ¢
+         * è·å– std::exception
+         * æ ‡å‡†é”™è¯¯æ¶ˆæ¯
          */
         const char* what() const noexcept override {
             return full_message_.c_str();
@@ -207,9 +207,9 @@ namespace z3y {
 
         /**
          * @brief
-         * »ñÈ¡ÏêÏ¸µÄ
+         * è·å–è¯¦ç»†çš„
          * InstanceError
-         * ´íÎóÂë
+         * é”™è¯¯ç 
          */
         InstanceError GetError() const noexcept {
             return error_;

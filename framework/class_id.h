@@ -1,11 +1,11 @@
 /**
  * @file class_id.h
- * @brief ¶¨Òå z3y::ClassId ºÍ±àÒëÆÚ¹şÏ£º¯Êı¡£
- * @author ËïÅôÓî
+ * @brief å®šä¹‰ z3y::ClassId å’Œç¼–è¯‘æœŸå“ˆå¸Œå‡½æ•°ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * ... (v2.1 ĞŞ¸´ÈÕÖ¾) ...
- * [ĞŞ¸Ä] ×ñ´Ó Google ÃüÃûÔ¼¶¨ (UpperCamelCase for
+ * ... (v2.1 ä¿®å¤æ—¥å¿—) ...
+ * [ä¿®æ”¹] éµä» Google å‘½åçº¦å®š (UpperCamelCase for
  * types)
  */
 
@@ -14,57 +14,57 @@
 #ifndef Z3Y_FRAMEWORK_CLASS_ID_H_
 #define Z3Y_FRAMEWORK_CLASS_ID_H_
 
-#include <cstdint>  // ÓÃÓÚ uint64_t, C++11 ±ê×¼¿â
+#include <cstdint>  // ç”¨äº uint64_t, C++11 æ ‡å‡†åº“
 
 namespace z3y {
 
     /**
      * @typedef ClassId
-     * @brief ¿ò¼ÜÖĞËùÓĞ¡°ÊµÏÖÀà¡± (Component Class) µÄÎ¨Ò»±êÊ¶·û¡£
+     * @brief æ¡†æ¶ä¸­æ‰€æœ‰â€œå®ç°ç±»â€ (Component Class) çš„å”¯ä¸€æ ‡è¯†ç¬¦ã€‚
      *
-     * ÕâÊÇÒ»¸ö 64 Î»ÎŞ·ûºÅÕûÊı£¬ÓÉ z3y::ConstexprHash ÔÚ±àÒëÆÚ¼ÆËãµÃ³ö¡£
+     * è¿™æ˜¯ä¸€ä¸ª 64 ä½æ— ç¬¦å·æ•´æ•°ï¼Œç”± z3y::ConstexprHash åœ¨ç¼–è¯‘æœŸè®¡ç®—å¾—å‡ºã€‚
      */
     using ClassId = uint64_t;
 
     /**
      * @typedef InterfaceId
-     * @brief [ĞŞ¸Ä] ¿ò¼ÜÖĞËùÓĞ¡°½Ó¿Ú¡± (Interface) µÄÎ¨Ò»±êÊ¶·û¡£
+     * @brief [ä¿®æ”¹] æ¡†æ¶ä¸­æ‰€æœ‰â€œæ¥å£â€ (Interface) çš„å”¯ä¸€æ ‡è¯†ç¬¦ã€‚
      *
      * @design
-     * ËüÔÚµ×²ãÓë ClassId ÏàÍ¬ (uint64_t)£¬
-     * µ«ÔÚº¯ÊıÇ©ÃûÖĞÊ¹ÓÃ
-     * (ÀıÈç QueryInterfaceRaw(InterfaceId iid))
-     * ¿ÉÒÔÇåÎúµØ±íÃ÷ÒâÍ¼¡£
+     * å®ƒåœ¨åº•å±‚ä¸ ClassId ç›¸åŒ (uint64_t)ï¼Œ
+     * ä½†åœ¨å‡½æ•°ç­¾åä¸­ä½¿ç”¨
+     * (ä¾‹å¦‚ QueryInterfaceRaw(InterfaceId iid))
+     * å¯ä»¥æ¸…æ™°åœ°è¡¨æ˜æ„å›¾ã€‚
      */
     using InterfaceId = ClassId;
 
     /**
      * @typedef EventId
-     * @brief [ĞŞ¸Ä] ¿ò¼ÜÖĞËùÓĞ¡°ÊÂ¼ş¡± (Event) µÄÎ¨Ò»±êÊ¶·û¡£
+     * @brief [ä¿®æ”¹] æ¡†æ¶ä¸­æ‰€æœ‰â€œäº‹ä»¶â€ (Event) çš„å”¯ä¸€æ ‡è¯†ç¬¦ã€‚
      *
      * @design
-     * ËüÔÚµ×²ãÓë ClassId ÏàÍ¬ (uint64_t)£¬
-     * µ«ÔÚÊÂ¼ş×ÜÏß (EventBus)
-     * µÄº¯ÊıÇ©ÃûÖĞÊ¹ÓÃ
-     * (ÀıÈç FireGlobalImpl(EventId event_id, ...))
-     * ¿ÉÒÔÇåÎúµØ±íÃ÷ÒâÍ¼¡£
+     * å®ƒåœ¨åº•å±‚ä¸ ClassId ç›¸åŒ (uint64_t)ï¼Œ
+     * ä½†åœ¨äº‹ä»¶æ€»çº¿ (EventBus)
+     * çš„å‡½æ•°ç­¾åä¸­ä½¿ç”¨
+     * (ä¾‹å¦‚ FireGlobalImpl(EventId event_id, ...))
+     * å¯ä»¥æ¸…æ™°åœ°è¡¨æ˜æ„å›¾ã€‚
      */
     using EventId = ClassId;
 
 
-    // --- ±àÒëÆÚ¹şÏ£ (Compile-Time Hashing) ---
-    // (ÄÚ²¿ÊµÏÖ£¬¶ÔÓÃ»§Òş²Ø)
+    // --- ç¼–è¯‘æœŸå“ˆå¸Œ (Compile-Time Hashing) ---
+    // (å†…éƒ¨å®ç°ï¼Œå¯¹ç”¨æˆ·éšè—)
     namespace internal {
-        //! FNV-1a Ëã·¨µÄ 64 Î»Æ«ÒÆ»ù×¼
+        //! FNV-1a ç®—æ³•çš„ 64 ä½åç§»åŸºå‡†
         constexpr uint64_t kFnvOffsetBasis = 0xcbf29ce484222325ULL;
-        //! FNV-1a Ëã·¨µÄ 64 Î»ÖÊÊı
+        //! FNV-1a ç®—æ³•çš„ 64 ä½è´¨æ•°
         constexpr uint64_t kFnvPrime = 0x100000001b3ULL;
 
         /**
-         * @brief ±àÒëÆÚ¹şÏ£µÄµİ¹éÊµÏÖº¯Êı (C++14/17)¡£
-         * @param[in] str C·ç¸ñ×Ö·û´® (±ØĞëÊÇ±àÒëÆÚ³£Á¿)¡£
-         * @param[in] hash µ±Ç°µÄ¹şÏ£ÀÛ¼ÆÖµ¡£
-         * @return ×îÖÕµÄ 64 Î»¹şÏ£Öµ¡£
+         * @brief ç¼–è¯‘æœŸå“ˆå¸Œçš„é€’å½’å®ç°å‡½æ•° (C++14/17)ã€‚
+         * @param[in] str Cé£æ ¼å­—ç¬¦ä¸² (å¿…é¡»æ˜¯ç¼–è¯‘æœŸå¸¸é‡)ã€‚
+         * @param[in] hash å½“å‰çš„å“ˆå¸Œç´¯è®¡å€¼ã€‚
+         * @return æœ€ç»ˆçš„ 64 ä½å“ˆå¸Œå€¼ã€‚
          */
         constexpr uint64_t Fnv1aHashRt(const char* str,
             uint64_t hash = kFnvOffsetBasis) {
@@ -77,7 +77,7 @@ namespace z3y {
 
 
     /**
-     * @brief [¿ò¼ÜºËĞÄ¹¤¾ß] ½«Ò»¸ö×Ö·û´®ÔÚ¡°±àÒëÆÚ¡±×ª»»ÎªÒ»¸ö 64 Î»µÄ ClassId¡£
+     * @brief [æ¡†æ¶æ ¸å¿ƒå·¥å…·] å°†ä¸€ä¸ªå­—ç¬¦ä¸²åœ¨â€œç¼–è¯‘æœŸâ€è½¬æ¢ä¸ºä¸€ä¸ª 64 ä½çš„ ClassIdã€‚
      *
      * @example
      * \code{.cpp}
@@ -89,12 +89,12 @@ namespace z3y {
      * } // namespace z3y
      * \endcode
      *
-     * @param[in] str ±ØĞëÊÇÒ»¸ö±àÒëÆÚ³£Á¿×Ö·û´® (ÀıÈç "uuid-string")¡£
-     * @return 64 Î»µÄ ClassId (uint64_t)¡£
+     * @param[in] str å¿…é¡»æ˜¯ä¸€ä¸ªç¼–è¯‘æœŸå¸¸é‡å­—ç¬¦ä¸² (ä¾‹å¦‚ "uuid-string")ã€‚
+     * @return 64 ä½çš„ ClassId (uint64_t)ã€‚
      */
     constexpr ClassId ConstexprHash(const char* str) {
         return (str == nullptr || *str == '\0')
-            ? 0  // 0 Í¨³£±»ÊÓÎªÎŞĞ§ ClassId
+            ? 0  // 0 é€šå¸¸è¢«è§†ä¸ºæ— æ•ˆ ClassId
             : internal::Fnv1aHashRt(str);
     }
 

@@ -1,31 +1,21 @@
 /**
  * @file i_plugin_query.h
- * @brief ¶¨Òå z3y::IPluginQuery ½Ó¿Ú£¬ÓÃÓÚ¿ò¼ÜµÄÄÚÊ¡ºÍ
- * ·şÎñ·¢ÏÖ¡£
- * @author (ÄúµÄÃû×Ö)
+ * @brief å®šä¹‰ z3y::IPluginQuery æ¥å£ï¼Œç”¨äºæ¡†æ¶çš„å†…çœå’Œ
+ * æœåŠ¡å‘ç°ã€‚
+ * @author (æ‚¨çš„åå­—)
  * @date 2025-11-12
  *
- * [ĞŞ¸Ä]
- * 1. [ĞÂ]
- * ¶¨Òå InterfaceDetails
- * ½á¹¹Ìå¡£
- * 2. [ĞŞ¸Ä]
+ * [ä¿®æ”¹]
+ * ...
+ * 5. [ä¿®æ”¹] [!!]
+ * æ–°å¢ InterfaceVersion
+ * ç»“æ„ä½“ï¼Œ
+ * æå‡æ¸…æ™°åº¦
+ * 6. [ä¿®æ”¹] [!!]
  * ComponentDetails
- * ÏÖÔÚ·µ»Ø
- * vector<InterfaceDetails>
- * ¶ø²»ÊÇ
- * vector<InterfaceId>¡£
- * 3. [ĞŞ¸Ä]
- * Ê¹ÓÃ Z3Y_DEFINE_INTERFACE
- * ºê¡£
- * 4. [ĞŞ¸Ä]
- * (ÒÑÍê³É)
- * Ôö¼Ó GetComponentDetailsByAlias
- * ½Ó¿Ú
- * 5. [ĞŞ¸Ä] [!!]
- * ĞÂÔö InterfaceVersion
- * ½á¹¹Ìå£¬
- * ÌáÉıÇåÎú¶È
+ * æ–°å¢
+ * "is_registered_as_default"
+ * å­—æ®µ
  */
 
 #pragma once
@@ -35,7 +25,7 @@
 
 #include "framework/i_component.h"
 #include "framework/class_id.h"
-#include "framework/interface_helpers.h" // [ĞÂ]
+#include "framework/interface_helpers.h" // [æ–°]
 #include <string>
 #include <vector>
 
@@ -43,8 +33,8 @@ namespace z3y {
 
     namespace clsid {
         /**
-         * @brief [ĞÂÔö] ¿ò¼ÜºËĞÄ²å¼ş²éÑ¯·şÎñµÄ "·şÎñID"¡£
-         * ËŞÖ÷³ÌĞòÊ¹ÓÃ´Ë ID À´ GetService¡£
+         * @brief [æ–°å¢] æ¡†æ¶æ ¸å¿ƒæ’ä»¶æŸ¥è¯¢æœåŠ¡çš„ "æœåŠ¡ID"ã€‚
+         * å®¿ä¸»ç¨‹åºä½¿ç”¨æ­¤ ID æ¥ GetServiceã€‚
          */
         constexpr ClassId kPluginQuery =
             ConstexprHash("z3y-core-plugin-query-SERVICE-UUID");
@@ -52,12 +42,12 @@ namespace z3y {
 
     /**
      * @struct InterfaceVersion
-     * @brief [ĞÂ]
-     * ÓÃÓÚÇåÎúµØ·â×°½Ó¿ÚµÄ°æ±¾ºÅ¡£
+     * @brief [æ–°]
+     * ç”¨äºæ¸…æ™°åœ°å°è£…æ¥å£çš„ç‰ˆæœ¬å·ã€‚
      */
     struct InterfaceVersion {
-        uint32_t major;     //!< ½Ó¿ÚÖ÷°æ±¾ºÅ
-        uint32_t minor;     //!< ½Ó¿Ú´Î°æ±¾ºÅ
+        uint32_t major;     //!< æ¥å£ä¸»ç‰ˆæœ¬å·
+        uint32_t minor;     //!< æ¥å£æ¬¡ç‰ˆæœ¬å·
         // 
         // (
         // 
@@ -68,18 +58,18 @@ namespace z3y {
 
     /**
      * @struct InterfaceDetails
-     * @brief [ĞÂ]
-     * ÃèÊöÒ»¸öÒÑ×¢²á½Ó¿ÚµÄÏêÏ¸ĞÅÏ¢¡£
+     * @brief [æ–°]
+     * æè¿°ä¸€ä¸ªå·²æ³¨å†Œæ¥å£çš„è¯¦ç»†ä¿¡æ¯ã€‚
      */
     struct InterfaceDetails {
-        InterfaceId iid;      //!< ½Ó¿ÚID (uint64_t)£¬ÓÃÓÚ PluginCast
+        InterfaceId iid;      //!< æ¥å£ID (uint64_t)ï¼Œç”¨äº PluginCast
         std::string name;     //!< 
-        //!< ½Ó¿ÚµÄ×Ö·û´®Ãû³Æ (
-        //!< ÀıÈç "ISimple")
+        //!< æ¥å£çš„å­—ç¬¦ä¸²åç§° (
+        //!< ä¾‹å¦‚ "ISimple")
 
         /**
-         * @brief [ĞŞ¸Ä]
-         * ²å¼şÊµÏÖµÄ½Ó¿Ú°æ±¾
+         * @brief [ä¿®æ”¹]
+         * æ’ä»¶å®ç°çš„æ¥å£ç‰ˆæœ¬
          * (vMajor.vMinor)
          */
         InterfaceVersion version;
@@ -87,97 +77,105 @@ namespace z3y {
 
     /**
      * @struct ComponentDetails
-     * @brief ÃèÊöÒ»¸öÒÑ×¢²á×é¼ş£¨ÊµÏÖÀà£©µÄÏêÏ¸ĞÅÏ¢¡£
-     * (×ñ´Ó Google ·ç¸ñ£ºstruct ³ÉÔ±±äÁ¿Ê¹ÓÃ lower_case)
+     * @brief æè¿°ä¸€ä¸ªå·²æ³¨å†Œç»„ä»¶ï¼ˆå®ç°ç±»ï¼‰çš„è¯¦ç»†ä¿¡æ¯ã€‚
+     * (éµä» Google é£æ ¼ï¼šstruct æˆå‘˜å˜é‡ä½¿ç”¨ lower_case)
      */
     struct ComponentDetails {
-        ClassId clsid;                    //!< ÊµÏÖÀàµÄ ClassId
-        std::string alias;                //!< ×¢²áµÄ±ğÃû (ÀıÈç "Simple.A")
-        bool is_singleton;                //!< ÊÇ·ñÎªµ¥Àı·şÎñ
-        std::string source_plugin_path;   //!< ×¢²á´Ë×é¼şµÄ²å¼ş DLL/SO
-        //!< µÄÂ·¾¶
+        ClassId clsid;                    //!< å®ç°ç±»çš„ ClassId
+        std::string alias;                //!< æ³¨å†Œçš„åˆ«å (ä¾‹å¦‚ "Simple.A")
+        bool is_singleton;                //!< æ˜¯å¦ä¸ºå•ä¾‹æœåŠ¡
+        std::string source_plugin_path;   //!< æ³¨å†Œæ­¤ç»„ä»¶çš„æ’ä»¶ DLL/SO
+        //!< çš„è·¯å¾„
 
         /**
-         * @brief [ĞŞ¸Ä]
-         * ´Ë×é¼şÊµÏÖµÄËùÓĞ½Ó¿Ú (Id,
+         * @brief [!!
+         * æ–°å¢ !!]
+         * æ³¨å†Œæ—¶ is_default
+         * æ ‡è®°æ˜¯å¦ä¸º true
+         */
+        bool is_registered_as_default;
+
+        /**
+         * @brief [ä¿®æ”¹]
+         * æ­¤ç»„ä»¶å®ç°çš„æ‰€æœ‰æ¥å£ (Id,
          * Name,
-         * * ºÍ°æ±¾
+         * * å’Œç‰ˆæœ¬
          * )
-         * ÁĞ±í
+         * åˆ—è¡¨
          */
         std::vector<InterfaceDetails> implemented_interfaces;
     };
 
     /**
      * @class IPluginQuery
-     * @brief [¿ò¼ÜºËĞÄ] ²å¼ş×¢²á±í²éÑ¯½Ó¿Ú¡£
+     * @brief [æ¡†æ¶æ ¸å¿ƒ] æ’ä»¶æ³¨å†Œè¡¨æŸ¥è¯¢æ¥å£ã€‚
      *
-     * [ĞŞ¸Ä] ±ØĞëÊ¹ÓÃ public virtual
-     * ¼Ì³ĞÒÔ½â¾ö×êÊ¯ÎÊÌâ
+     * [ä¿®æ”¹] å¿…é¡»ä½¿ç”¨ public virtual
+     * ç»§æ‰¿ä»¥è§£å†³é’»çŸ³é—®é¢˜
      */
-    class IPluginQuery : public virtual IComponent {  // [ĞŞ¸Ä]
+    class IPluginQuery : public virtual IComponent {  // [ä¿®æ”¹]
     public:
         /**
-         * @brief [ĞŞ¸Ä]
-         * Ê¹ÓÃ Z3Y_DEFINE_INTERFACE
-         * ºê
+         * @brief [ä¿®æ”¹]
+         * ä½¿ç”¨ Z3Y_DEFINE_INTERFACE
+         * å®
          */
-         // (ÒÑÔÚÉÏÒ»ÂÖĞŞ¸´)
+         // (å·²åœ¨ä¸Šä¸€è½®ä¿®å¤)
         Z3Y_DEFINE_INTERFACE(IPluginQuery, "z3y-core-IPluginQuery-IID-A0000003", 1, 0)
 
             /**
-             * @brief »ñÈ¡ËùÓĞÒÑ×¢²á×é¼şµÄÏêÏ¸ĞÅÏ¢¡£
+             * @brief è·å–æ‰€æœ‰å·²æ³¨å†Œç»„ä»¶çš„è¯¦ç»†ä¿¡æ¯ã€‚
              */
             virtual std::vector<ComponentDetails> GetAllComponents() = 0;
 
         /**
-         * @brief »ñÈ¡ÌØ¶¨ ClassId µÄ×é¼şµÄÏêÏ¸ĞÅÏ¢¡£
-         * @param[in] clsid Òª²éÑ¯µÄ×é¼ş ClassId¡£
-         * @param[out] out_details Èç¹ûÕÒµ½£¬
-         * ÓÃÓÚÌî³äÏêÏ¸ĞÅÏ¢µÄ½á¹¹Ìå¡£
-         * @return true Èç¹ûÕÒµ½¸Ã clsid£¬·ñÔò
-         * false¡£
+         * @brief è·å–ç‰¹å®š ClassId çš„ç»„ä»¶çš„è¯¦ç»†ä¿¡æ¯ã€‚
+         * @param[in] clsid è¦æŸ¥è¯¢çš„ç»„ä»¶ ClassIdã€‚
+         * @param[out] out_details å¦‚æœæ‰¾åˆ°ï¼Œ
+         * ç”¨äºå¡«å……è¯¦ç»†ä¿¡æ¯çš„ç»“æ„ä½“ã€‚
+         * @return true å¦‚æœæ‰¾åˆ°è¯¥ clsidï¼Œå¦åˆ™
+         * falseã€‚
          */
         virtual bool GetComponentDetails(ClassId clsid,
             ComponentDetails& out_details) = 0;
 
         /**
-         * @brief [ĞÂÔö]
-         * »ñÈ¡ÌØ¶¨±ğÃû (Alias)
-         * µÄ×é¼şµÄÏêÏ¸ĞÅÏ¢¡£
-         * (ÒÑÍê³É)
+         * @brief [æ–°å¢]
+         * è·å–ç‰¹å®šåˆ«å (Alias)
+         * çš„ç»„ä»¶çš„è¯¦ç»†ä¿¡æ¯ã€‚
+         * (å·²å®Œæˆ)
          */
         virtual bool GetComponentDetailsByAlias(const std::string& alias,
             ComponentDetails& out_details) = 0;
 
         /**
-         * @brief ²éÕÒËùÓĞÊµÏÖÁËÌØ¶¨½Ó¿Ú (Iid) µÄ×é¼ş¡£
+         * @brief æŸ¥æ‰¾æ‰€æœ‰å®ç°äº†ç‰¹å®šæ¥å£ (Iid) çš„ç»„ä»¶ã€‚
          *
          * @param[in] iid
-         * Òª²éÑ¯µÄ½Ó¿Ú
-         * ID (ÀıÈç ISimple::kIid)¡£
+         * è¦æŸ¥è¯¢çš„æ¥å£
+         * ID (ä¾‹å¦‚ ISimple::kIid)ã€‚
          * @return
-         * ÊµÏÖÁË¸Ã½Ó¿ÚµÄËùÓĞ×é¼şµÄ
-         * ComponentDetails ÁĞ±í¡£
+         * å®ç°äº†è¯¥æ¥å£çš„æ‰€æœ‰ç»„ä»¶çš„
+         * ComponentDetails åˆ—è¡¨ã€‚
          */
         virtual std::vector<ComponentDetails> FindComponentsImplementing(
             InterfaceId iid) = 0;
 
         /**
-         * @brief »ñÈ¡ËùÓĞÒÑ³É¹¦¼ÓÔØµÄ²å¼şÎÄ¼ş£¨DLL/SO£©µÄÂ·¾¶ÁĞ±í¡£
+         * @brief è·å–æ‰€æœ‰å·²æˆåŠŸåŠ è½½çš„æ’ä»¶æ–‡ä»¶ï¼ˆDLL/SOï¼‰çš„è·¯å¾„åˆ—è¡¨ã€‚
          */
         virtual std::vector<std::string> GetLoadedPluginFiles() = 0;
 
         /**
-         * @brief »ñÈ¡ÓÉÌØ¶¨²å¼şÎÄ¼ş×¢²áµÄËùÓĞ×é¼ş¡£
+         * @brief è·å–ç”±ç‰¹å®šæ’ä»¶æ–‡ä»¶æ³¨å†Œçš„æ‰€æœ‰ç»„ä»¶ã€‚
          *
          * @param[in] plugin_path
-         * ²å¼şÎÄ¼şµÄÍêÕûÂ·¾¶
-         * (Óë GetLoadedPluginFiles()
-         * ·µ»ØµÄ×Ö·û´®Æ¥Åä)¡£
+         * æ’ä»¶æ–‡ä»¶çš„å®Œæ•´è·¯å¾„
+         * (ä¸ GetLoadedPluginFiles()
+         * è¿”å›çš„å­—ç¬¦ä¸²åŒ¹é…)ã€‚
          * @return
-         * ¸Ã²å¼ş×¢²áµÄËùÓĞ×é¼şµÄ
-         * ComponentDetails ÁĞ±í¡£
+         * è¯¥æ’ä»¶æ³¨å†Œçš„æ‰€æœ‰ç»„ä»¶çš„
+         * ComponentDetails åˆ—è¡¨ã€‚
          */
         virtual std::vector<ComponentDetails> GetComponentsFromPlugin(
             const std::string& plugin_path) = 0;

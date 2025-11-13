@@ -1,22 +1,22 @@
 /**
  * @file interface_helpers.h
- * @brief [ĞÂ]
- * ¶¨Òå Z3Y_DEFINE_INTERFACE
- * ºê£¬
- * ÓÃÓÚ¼ò»¯½Ó¿Ú¶¨Òå¡£
- * @author (ÄúµÄÃû×Ö)
+ * @brief [æ–°]
+ * å®šä¹‰ Z3Y_DEFINE_INTERFACE
+ * å®ï¼Œ
+ * ç”¨äºç®€åŒ–æ¥å£å®šä¹‰ã€‚
+ * @author (æ‚¨çš„åå­—)
  * @date 2025-11-12
  *
- * [ĞŞ¸Ä]
+ * [ä¿®æ”¹]
  * 1. Z3Y_DEFINE_INTERFACE
- * ºêÏÖÔÚ½ÓÊÜ (ClassName, UuidString,
+ * å®ç°åœ¨æ¥å— (ClassName, UuidString,
  * VersionMajor, VersionMinor)
  * 2.
- * ºêÏÖÔÚ¶¨Òå kVersionMajor
- * ºÍ kVersionMinor
+ * å®ç°åœ¨å®šä¹‰ kVersionMajor
+ * å’Œ kVersionMinor
  * 3. [FIX]
- * ÒÆ³ıÁË kName
- * ¶¨ÒåĞĞÄ©Î²¶àÓàµÄ·ÖºÅ (;)
+ * ç§»é™¤äº† kName
+ * å®šä¹‰è¡Œæœ«å°¾å¤šä½™çš„åˆ†å· (;)
  */
 #pragma once
 
@@ -26,55 +26,55 @@
 #include "framework/class_id.h"
 
  /**
-  * @brief [¿ò¼Ü¸¨Öúºê]
-  * ÓÃÓÚÔÚ½Ó¿ÚÀàÖĞÍ³Ò»¶¨Òå kIid, kName,
-  * ºÍ SemVer
-  * °æ±¾¡£
+  * @brief [æ¡†æ¶è¾…åŠ©å®]
+  * ç”¨äºåœ¨æ¥å£ç±»ä¸­ç»Ÿä¸€å®šä¹‰ kIid, kName,
+  * å’Œ SemVer
+  * ç‰ˆæœ¬ã€‚
   *
   * @param ClassName
-  * ½Ó¿ÚµÄÀàÃû (ÀıÈç ISimple)¡£
+  * æ¥å£çš„ç±»å (ä¾‹å¦‚ ISimple)ã€‚
   * @param UuidString
-  * ÓÃÓÚÉú³É IID
-  * µÄÎ¨Ò» UUID ×Ö·û´®¡£
+  * ç”¨äºç”Ÿæˆ IID
+  * çš„å”¯ä¸€ UUID å­—ç¬¦ä¸²ã€‚
   * @param VersionMajor
-  * [ĞÂ]
-  * Ö÷°æ±¾ºÅ (
-  * ÓÃÓÚÆÆ»µĞÔ ABI
-  * ¸ü¸Ä
-  * )¡£
+  * [æ–°]
+  * ä¸»ç‰ˆæœ¬å· (
+  * ç”¨äºç ´åæ€§ ABI
+  * æ›´æ”¹
+  * )ã€‚
   * @param VersionMinor
-  * [ĞÂ]
-  * ´Î°æ±¾ºÅ (
-  * ÓÃÓÚÏòºó¼æÈİµÄ ABI
-  * ¸ü¸Ä
-  * )¡£
+  * [æ–°]
+  * æ¬¡ç‰ˆæœ¬å· (
+  * ç”¨äºå‘åå…¼å®¹çš„ ABI
+  * æ›´æ”¹
+  * )ã€‚
   */
 #define Z3Y_DEFINE_INTERFACE(ClassName, UuidString, VersionMajor, \
     VersionMinor) \
     /** \
-     * @brief ½Ó¿ÚµÄÎ¨Ò» IID (ÓÉ Z3Y_DEFINE_INTERFACE ×Ô¶¯Éú³É)¡£ \
+     * @brief æ¥å£çš„å”¯ä¸€ IID (ç”± Z3Y_DEFINE_INTERFACE è‡ªåŠ¨ç”Ÿæˆ)ã€‚ \
      */ \
     static constexpr z3y::InterfaceId kIid = \
         z3y::ConstexprHash(UuidString); \
     /** \
-     * @brief ½Ó¿ÚµÄÈËÀà¿É¶ÁÃû³Æ (ÓÉ Z3Y_DEFINE_INTERFACE ×Ô¶¯Éú³É)¡£ \
+     * @brief æ¥å£çš„äººç±»å¯è¯»åç§° (ç”± Z3Y_DEFINE_INTERFACE è‡ªåŠ¨ç”Ÿæˆ)ã€‚ \
      */ \
     static constexpr const char* kName = #ClassName; /* [FIX] 
                                                     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * Stop */ \
     /** \
-        * @brief [ĞÂ]
-        * ½Ó¿ÚµÄÖ÷°æ±¾ºÅ (
-        * ÓÃÓÚ ABI
-        * ÆÆ»µĞÔ±ä¸ü
-        * )¡£ \
+        * @brief [æ–°]
+        * æ¥å£çš„ä¸»ç‰ˆæœ¬å· (
+        * ç”¨äº ABI
+        * ç ´åæ€§å˜æ›´
+        * )ã€‚ \
         */ \
         static constexpr uint32_t kVersionMajor = VersionMajor; \
         /** \
-            * @brief [ĞÂ]
-            * ½Ó¿ÚµÄ´Î°æ±¾ºÅ (
-            * ÓÃÓÚ ABI
-            * ¼æÈİĞÔ±ä¸ü
-            * )¡£ \
+            * @brief [æ–°]
+            * æ¥å£çš„æ¬¡ç‰ˆæœ¬å· (
+            * ç”¨äº ABI
+            * å…¼å®¹æ€§å˜æ›´
+            * )ã€‚ \
             */ \
         static constexpr uint32_t kVersionMinor = VersionMinor;
 

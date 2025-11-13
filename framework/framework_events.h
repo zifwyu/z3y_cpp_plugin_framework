@@ -1,19 +1,19 @@
 /**
  * @file framework_events.h
- * @brief ¶¨Òå z3y ¿ò¼ÜµÄºËĞÄÄÚ²¿ÊÂ¼ş¡£
- * @author ËïÅôÓî
+ * @brief å®šä¹‰ z3y æ¡†æ¶çš„æ ¸å¿ƒå†…éƒ¨äº‹ä»¶ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
  * ...
- * [ĞŞ¸Ä]
+ * [ä¿®æ”¹]
  * 1.
- * ×ñ´Ó Google ÃüÃûÔ¼¶¨
+ * éµä» Google å‘½åçº¦å®š
  * 2.
- * Ìí¼Ó class_id.h
- * Í·ÎÄ¼ş
- * 3. [ĞŞ¸Ä]
- * Ê¹ÓÃ Z3Y_DEFINE_EVENT
- * ºê
+ * æ·»åŠ  class_id.h
+ * å¤´æ–‡ä»¶
+ * 3. [ä¿®æ”¹]
+ * ä½¿ç”¨ Z3Y_DEFINE_EVENT
+ * å®
  */
 
 #pragma once
@@ -23,79 +23,79 @@
 
 #include "framework/i_event_bus.h"
 #include "framework/class_id.h"
-#include "framework/event_helpers.h" // [ĞÂ]
+#include "framework/event_helpers.h" // [æ–°]
 #include <string>
 
 namespace z3y {
     namespace event {
-        // --- 1. ²å¼ş¼ÓÔØÊÂ¼ş ---
+        // --- 1. æ’ä»¶åŠ è½½äº‹ä»¶ ---
 
         /**
          * @struct PluginLoadSuccessEvent
-         * @brief [ÊÂ¼ş] µ±Ò»¸ö DLL/SO ²å¼ş±»³É¹¦¼ÓÔØºÍ³õÊ¼»¯Ê±´¥·¢¡£
+         * @brief [äº‹ä»¶] å½“ä¸€ä¸ª DLL/SO æ’ä»¶è¢«æˆåŠŸåŠ è½½å’Œåˆå§‹åŒ–æ—¶è§¦å‘ã€‚
          */
         struct PluginLoadSuccessEvent : public Event {
             /**
-             * @brief [ĞŞ¸Ä]
-             * Ê¹ÓÃ Z3Y_DEFINE_EVENT
-             * ºê
+             * @brief [ä¿®æ”¹]
+             * ä½¿ç”¨ Z3Y_DEFINE_EVENT
+             * å®
              */
             Z3Y_DEFINE_EVENT(PluginLoadSuccessEvent,
                 "z3y-event-plugin-load-success-E0000001")
 
-                std::string plugin_path_;  // [ĞŞ¸Ä]
+                std::string plugin_path_;  // [ä¿®æ”¹]
 
             explicit PluginLoadSuccessEvent(std::string path)
                 : plugin_path_(std::move(path)) {
-            }  // [ĞŞ¸Ä]
+            }  // [ä¿®æ”¹]
         };
 
         /**
          * @struct PluginLoadFailureEvent
-         * @brief [ÊÂ¼ş] µ±Ò»¸ö DLL/SO ²å¼ş¼ÓÔØ»ò³õÊ¼»¯Ê§°ÜÊ±´¥·¢¡£
+         * @brief [äº‹ä»¶] å½“ä¸€ä¸ª DLL/SO æ’ä»¶åŠ è½½æˆ–åˆå§‹åŒ–å¤±è´¥æ—¶è§¦å‘ã€‚
          */
         struct PluginLoadFailureEvent : public Event {
             /**
-             * @brief [ĞŞ¸Ä]
-             * Ê¹ÓÃ Z3Y_DEFINE_EVENT
-             * ºê
+             * @brief [ä¿®æ”¹]
+             * ä½¿ç”¨ Z3Y_DEFINE_EVENT
+             * å®
              */
             Z3Y_DEFINE_EVENT(PluginLoadFailureEvent,
                 "z3y-event-plugin-load-failure-E0000002")
 
-                std::string plugin_path_;  // [ĞŞ¸Ä]
-            std::string error_message_;  // [ĞŞ¸Ä]
+                std::string plugin_path_;  // [ä¿®æ”¹]
+            std::string error_message_;  // [ä¿®æ”¹]
 
             PluginLoadFailureEvent(std::string path, std::string error)
                 : plugin_path_(std::move(path)),
                 error_message_(std::move(error)) {
-            }  // [ĞŞ¸Ä]
+            }  // [ä¿®æ”¹]
         };
 
 
-        // --- 2. ×é¼ş×¢²áÊÂ¼ş ---
+        // --- 2. ç»„ä»¶æ³¨å†Œäº‹ä»¶ ---
 
         /**
          * @struct ComponentRegisterEvent
-         * @brief [ÊÂ¼ş] µ±Ò»¸ö×é¼ş (ÆÕÍ¨»òµ¥Àı)
-         * ±»×¢²áµ½ PluginManager Ê±´¥·¢¡£
+         * @brief [äº‹ä»¶] å½“ä¸€ä¸ªç»„ä»¶ (æ™®é€šæˆ–å•ä¾‹)
+         * è¢«æ³¨å†Œåˆ° PluginManager æ—¶è§¦å‘ã€‚
          */
         struct ComponentRegisterEvent : public Event {
             /**
-             * @brief [ĞŞ¸Ä]
-             * Ê¹ÓÃ Z3Y_DEFINE_EVENT
-             * ºê
+             * @brief [ä¿®æ”¹]
+             * ä½¿ç”¨ Z3Y_DEFINE_EVENT
+             * å®
              */
             Z3Y_DEFINE_EVENT(ComponentRegisterEvent,
                 "z3y-event-component-register-E0000003")
 
-                ClassId clsid_;          // [ĞŞ¸Ä]
-            std::string alias_;      // [ĞŞ¸Ä]
-            std::string plugin_path_;  // [ĞŞ¸Ä]
-            bool is_singleton_;  // [ĞŞ¸Ä]
+                ClassId clsid_;          // [ä¿®æ”¹]
+            std::string alias_;      // [ä¿®æ”¹]
+            std::string plugin_path_;  // [ä¿®æ”¹]
+            bool is_singleton_;  // [ä¿®æ”¹]
 
             /**
-             * @brief ¹¹Ôìº¯Êı
+             * @brief æ„é€ å‡½æ•°
              */
             ComponentRegisterEvent(ClassId id, const std::string& a,
                 const std::string& path, bool singleton)
@@ -103,33 +103,33 @@ namespace z3y {
                 alias_(a),
                 plugin_path_(path),
                 is_singleton_(singleton) {
-            }  // [ĞŞ¸Ä]
+            }  // [ä¿®æ”¹]
         };
 
 
-        // --- 3. Òì²½Òì³£ÊÂ¼ş ---
+        // --- 3. å¼‚æ­¥å¼‚å¸¸äº‹ä»¶ ---
 
         /**
          * @struct AsyncExceptionEvent
-         * @brief [ÊÂ¼ş]
-         * µ±Ò»¸ö kQueued
-         * (Òì²½)
-         * ÊÂ¼ş»Øµ÷ÔÚ¹¤×÷Ïß³ÌÖĞÅ×³öÒì³£Ê±´¥·¢¡£
+         * @brief [äº‹ä»¶]
+         * å½“ä¸€ä¸ª kQueued
+         * (å¼‚æ­¥)
+         * äº‹ä»¶å›è°ƒåœ¨å·¥ä½œçº¿ç¨‹ä¸­æŠ›å‡ºå¼‚å¸¸æ—¶è§¦å‘ã€‚
          */
         struct AsyncExceptionEvent : public Event {
             /**
-             * @brief [ĞŞ¸Ä]
-             * Ê¹ÓÃ Z3Y_DEFINE_EVENT
-             * ºê
+             * @brief [ä¿®æ”¹]
+             * ä½¿ç”¨ Z3Y_DEFINE_EVENT
+             * å®
              */
             Z3Y_DEFINE_EVENT(AsyncExceptionEvent,
                 "z3y-event-async-exception-E0000004")
 
-                std::string error_message_;  // [ĞŞ¸Ä]
+                std::string error_message_;  // [ä¿®æ”¹]
 
             explicit AsyncExceptionEvent(std::string error)
                 : error_message_(std::move(error)) {
-            }  // [ĞŞ¸Ä]
+            }  // [ä¿®æ”¹]
         };
 
     }  // namespace event

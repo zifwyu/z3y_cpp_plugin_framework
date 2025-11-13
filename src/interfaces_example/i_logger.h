@@ -1,52 +1,54 @@
 /**
  * @file i_logger.h
- * @brief ¶¨Òå z3y::example::ILogger ½Ó¿Ú¡£
- * @author ËïÅôÓî
+ * @brief å®šä¹‰ z3y::example::ILogger æ¥å£ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * [ĞŞ¸Ä]
+ * [ä¿®æ”¹]
  * 1.
- * Ê¹ÓÃ Z3Y_DEFINE_INTERFACE
- * ºê (
- * °æ±¾ 1.0)
+ * ä½¿ç”¨ Z3Y_DEFINE_INTERFACE
+ * å® (
+ * ç‰ˆæœ¬ 1.0)
  * 2.
- * Ìí¼Ó <string>
- * 3. [ĞŞ¸Ä]
- * ÒÆÈë z3y::example
- * ÃüÃû¿Õ¼ä
- */
+ * æ·»åŠ  <string>
+ * 3. [ä¿®æ”¹]
+ * ç§»å…¥ z3y::example
+ * å‘½åç©ºé—´
+ * 4. [ä¿®æ”¹] [!!]
+ * * * */
 
 #pragma once
 
 #ifndef Z3Y_INTERFACES_EXAMPLE_I_LOGGER_H_
 #define Z3Y_INTERFACES_EXAMPLE_I_LOGGER_H_
 
-#include "framework/i_component.h"
-#include "framework/interface_helpers.h" // [ĞÂ]
+#include "framework/z3y_plugin_sdk.h" // [!! 
+ // ä¿®æ”¹ !!] 
+ // 
 #include <string>  // [FIX]
 
 namespace z3y {
-    namespace example { // [ĞŞ¸Ä]
+    namespace example { // [ä¿®æ”¹]
 
         /**
          * @class ILogger
-         * @brief Ò»¸öÊ¾Àı¡°·şÎñ¡±½Ó¿Ú¡£
+         * @brief ä¸€ä¸ªç¤ºä¾‹â€œæœåŠ¡â€æ¥å£ã€‚
          */
         class ILogger : public virtual IComponent {
         public:
             /**
-             * @brief [ĞŞ¸Ä]
-             * Ê¹ÓÃ Z3Y_DEFINE_INTERFACE
-             * ºê (
-             * ¶¨ÒåÎª 1.0
-             * °æ±¾)
+             * @brief [ä¿®æ”¹]
+             * ä½¿ç”¨ Z3Y_DEFINE_INTERFACE
+             * å® (
+             * ç‰ˆæœ¬ 1.0
+             * ç‰ˆæœ¬)
              */
             Z3Y_DEFINE_INTERFACE(ILogger, "z3y-example-ILogger-IID-B1B542F8", \
                 1, 0)
 
                 /**
-                 * @brief ¼ÇÂ¼Ò»ÌõÏûÏ¢¡£
-                 * @param[in] message Òª¼ÇÂ¼µÄ×Ö·û´®¡£
+                 * @brief è®°å½•ä¸€æ¡æ¶ˆæ¯ã€‚
+                 * @param[in] message è¦è®°å½•çš„å­—ç¬¦ä¸²ã€‚
                  */
                 virtual void Log(const std::string& message) = 0;
         };

@@ -1,24 +1,24 @@
 /**
  * @file file_templates.h
- * @brief °üº¬ÓÃÓÚÉú³ÉĞÂ²å¼şµÄ C++ Ô­Ê¼×Ö·û´®Ä£°å¡£
- * @author ËïÅôÓî
+ * @brief åŒ…å«ç”¨äºç”Ÿæˆæ–°æ’ä»¶çš„ C++ åŸå§‹å­—ç¬¦ä¸²æ¨¡æ¿ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * [ĞŞ¸Ä]
+ * [ä¿®æ”¹]
  * 1.
- * ËùÓĞÄ£°å¾ùÒÑÏÖ´ú»¯£¬
- * ÒÔÊ¹ÓÃ Z3Y_DEFINE_INTERFACE,
+ * æ‰€æœ‰æ¨¡æ¿å‡å·²ç°ä»£åŒ–ï¼Œ
+ * ä»¥ä½¿ç”¨ Z3Y_DEFINE_INTERFACE,
  * Z3Y_DEFINE_COMPONENT_ID,
- * ºÍ¼ò»¯µÄ PluginImpl
- * ¼Ì³Ğ¡£
+ * å’Œç®€åŒ–çš„ PluginImpl
+ * ç»§æ‰¿ã€‚
  * 2.
- * Ä£°åÏÖÔÚÖ§³Ö²¢Ê¹ÓÃ
+ * æ¨¡æ¿ç°åœ¨æ”¯æŒå¹¶ä½¿ç”¨
  * $$PLUGIN_NAMESPACE$$
- * ºÍ
+ * å’Œ
  * $$INTERFACE_NAMESPACE$$
- * ÁîÅÆ¡£
+ * ä»¤ç‰Œã€‚
  * 3.
- * Ä£°åÏÖÔÚ°üº¬ z3y_plugin_sdk.h
+ * æ¨¡æ¿ç°åœ¨åŒ…å« z3y_plugin_sdk.h
  */
 
 #ifndef Z3Y_TOOL_CREATE_PLUGIN_FILE_TEMPLATES_H_
@@ -32,13 +32,13 @@ namespace z3y
     {
         namespace templates
         {
-            // Ä£°åÊ¹ÓÃ $$TOKEN$$ ×÷ÎªÌæ»»Õ¼Î»·û
+            // æ¨¡æ¿ä½¿ç”¨ $$TOKEN$$ ä½œä¸ºæ›¿æ¢å ä½ç¬¦
 
-            // 1. ½Ó¿ÚÍ·ÎÄ¼ş (e.g., i_my_component.h)
+            // 1. æ¥å£å¤´æ–‡ä»¶ (e.g., i_my_component.h)
             const std::string kInterfaceHeader = R"raw(/**
  * @file $$INTERFACE_FILENAME$$
- * @brief ¶¨Òå $$INTERFACE_NAME$$ ½Ó¿Ú¡£
- * @author (ÄúµÄÃû×Ö)
+ * @brief å®šä¹‰ $$INTERFACE_NAME$$ æ¥å£ã€‚
+ * @author (æ‚¨çš„åå­—)
  * @date $$DATE$$
  */
 
@@ -64,13 +64,13 @@ namespace $$INTERFACE_NAMESPACE$$
     {
     public:
         /**
-         * @brief [Z3Y ¿ò¼Ü] 
-         * ×Ô¶¯¶¨Òå kIid ºÍ kName
+         * @brief [Z3Y æ¡†æ¶] 
+         * è‡ªåŠ¨å®šä¹‰ kIid å’Œ kName
          */
         Z3Y_DEFINE_INTERFACE($$INTERFACE_NAME$$, "$$UUID_IFACE$$")
 
         /**
-         * @brief Ê¾ÀıÒµÎñº¯Êı£¬ÇëĞŞ¸Ä¡£
+         * @brief ç¤ºä¾‹ä¸šåŠ¡å‡½æ•°ï¼Œè¯·ä¿®æ”¹ã€‚
          */
         virtual void MyFunction() = 0;
     };
@@ -81,11 +81,11 @@ namespace $$INTERFACE_NAMESPACE$$
 )raw";
 
 
-            // 2. ÊµÏÖÀàÍ·ÎÄ¼ş (e.g., my_component_impl.h)
+            // 2. å®ç°ç±»å¤´æ–‡ä»¶ (e.g., my_component_impl.h)
             const std::string kImplHeader = R"raw(/**
  * @file $$IMPL_FILENAME_H$$
- * @brief ¶¨Òå $$IMPL_CLASS_NAME$$ ÊµÏÖÀà¡£
- * @author (ÄúµÄÃû×Ö)
+ * @brief å®šä¹‰ $$IMPL_CLASS_NAME$$ å®ç°ç±»ã€‚
+ * @author (æ‚¨çš„åå­—)
  * @date $$DATE$$
  */
 
@@ -101,33 +101,33 @@ namespace $$PLUGIN_NAMESPACE$$
 {
     /**
      * @class $$IMPL_CLASS_NAME$$
-     * @brief $$INTERFACE_NAME$$ ½Ó¿ÚµÄ¾ßÌåÊµÏÖ¡£
+     * @brief $$INTERFACE_NAME$$ æ¥å£çš„å…·ä½“å®ç°ã€‚
      */
     class $$IMPL_CLASS_NAME$$ : public z3y::PluginImpl<$$IMPL_CLASS_NAME$$,
                                                  $$INTERFACE_NAMESPACE$$::$$INTERFACE_NAME$$>
     {
     public:
         /**
-         * @brief [Z3Y ¿ò¼Ü] 
-         * ×Ô¶¯¶¨Òå kClsid¡£
+         * @brief [Z3Y æ¡†æ¶] 
+         * è‡ªåŠ¨å®šä¹‰ kClsidã€‚
          */
         Z3Y_DEFINE_COMPONENT_ID("$$UUID_IMPL$$")
 
     public:
         /**
-         * @brief ¹¹Ôìº¯Êı¡£
+         * @brief æ„é€ å‡½æ•°ã€‚
          */
         $$IMPL_CLASS_NAME$$();
 
         /**
-         * @brief Îö¹¹º¯Êı¡£
+         * @brief ææ„å‡½æ•°ã€‚
          */
         virtual ~$$IMPL_CLASS_NAME$$();
 
-        // --- $$INTERFACE_NAME$$ ½Ó¿ÚµÄÊµÏÖ ---
+        // --- $$INTERFACE_NAME$$ æ¥å£çš„å®ç° ---
 
         /**
-         * @brief Ê¾ÀıÒµÎñº¯ÊıÊµÏÖ¡£
+         * @brief ç¤ºä¾‹ä¸šåŠ¡å‡½æ•°å®ç°ã€‚
          */
         void MyFunction() override;
     };
@@ -138,11 +138,11 @@ namespace $$PLUGIN_NAMESPACE$$
 )raw";
 
 
-            // 3. ÊµÏÖÀàÔ´ÎÄ¼ş (e.g., my_component_impl.cpp)
+            // 3. å®ç°ç±»æºæ–‡ä»¶ (e.g., my_component_impl.cpp)
             const std::string kImplSource = R"raw(/**
  * @file $$IMPL_FILENAME_CPP$$
- * @brief $$IMPL_CLASS_NAME$$ ÊµÏÖÀàµÄÔ´ÎÄ¼ş¡£
- * @author (ÄúµÄÃû×Ö)
+ * @brief $$IMPL_CLASS_NAME$$ å®ç°ç±»çš„æºæ–‡ä»¶ã€‚
+ * @author (æ‚¨çš„åå­—)
  * @date $$DATE$$
  */
 
@@ -153,7 +153,7 @@ namespace $$PLUGIN_NAMESPACE$$
 {
 
     /**
-     * @brief ¹¹Ôìº¯Êı¡£
+     * @brief æ„é€ å‡½æ•°ã€‚
      */
     $$IMPL_CLASS_NAME$$::$$IMPL_CLASS_NAME$$()
     {
@@ -161,7 +161,7 @@ namespace $$PLUGIN_NAMESPACE$$
     }
 
     /**
-     * @brief Îö¹¹º¯Êı¡£
+     * @brief ææ„å‡½æ•°ã€‚
      */
     $$IMPL_CLASS_NAME$$::~$$IMPL_CLASS_NAME$$()
     {
@@ -169,7 +169,7 @@ namespace $$PLUGIN_NAMESPACE$$
     }
 
     /**
-     * @brief Ê¾ÀıÒµÎñº¯ÊıÊµÏÖ¡£
+     * @brief ç¤ºä¾‹ä¸šåŠ¡å‡½æ•°å®ç°ã€‚
      */
     void $$IMPL_CLASS_NAME$$::MyFunction()
     {
@@ -180,16 +180,16 @@ namespace $$PLUGIN_NAMESPACE$$
 )raw";
 
 
-            // 4. ²å¼şÈë¿ÚÎÄ¼ş (plugin_entry.cpp)
+            // 4. æ’ä»¶å…¥å£æ–‡ä»¶ (plugin_entry.cpp)
             const std::string kPluginEntry = R"raw(/**
  * @file plugin_entry.cpp
- * @brief $$PLUGIN_NAME$$ ²å¼şµÄÈë¿ÚµãÎÄ¼ş¡£
- * @author (ÄúµÄÃû×Ö)
+ * @brief $$PLUGIN_NAME$$ æ’ä»¶çš„å…¥å£ç‚¹æ–‡ä»¶ã€‚
+ * @author (æ‚¨çš„åå­—)
  * @date $$DATE$$
  *
  * @details
- * ´ËÎÄ¼ş¶¨ÒåÁË z3yPluginInit º¯Êı£¬
- * ËüÊÇ PluginManager ¼ÓÔØ´Ë DLL Ê±µ÷ÓÃµÄÎ¨Ò»Èë¿Úµã¡£
+ * æ­¤æ–‡ä»¶å®šä¹‰äº† z3yPluginInit å‡½æ•°ï¼Œ
+ * å®ƒæ˜¯ PluginManager åŠ è½½æ­¤ DLL æ—¶è°ƒç”¨çš„å”¯ä¸€å…¥å£ç‚¹ã€‚
  */
 
 #include "$$IMPL_FILENAME_H$$"
@@ -198,27 +198,27 @@ namespace $$PLUGIN_NAMESPACE$$
                                       // 
                                       // 
 
-// --- ¶¨Òå DLL µ¼³öºê ---
+// --- å®šä¹‰ DLL å¯¼å‡ºå® ---
 #ifdef _WIN32
-    #define PLUGIN_API __declspec(dllexport)
+    #define Z3Y_PLUGIN_API __declspec(dllexport)
 #else
-    #define PLUGIN_API __attribute__((visibility("default")))
+    #define Z3Y_PLUGIN_API __attribute__((visibility("default")))
 #endif
 
 /**
- * @brief ²å¼şµÄÎ¨Ò»Èë¿Úµãº¯Êı¡£
+ * @brief æ’ä»¶çš„å”¯ä¸€å…¥å£ç‚¹å‡½æ•°ã€‚
  *
- * @param[in] registry ËŞÖ÷ PluginManager ´«ÈëµÄ×¢²á±í½Ó¿ÚÖ¸Õë¡£
+ * @param[in] registry å®¿ä¸» PluginManager ä¼ å…¥çš„æ³¨å†Œè¡¨æ¥å£æŒ‡é’ˆã€‚
  */
-extern "C" PLUGIN_API void z3yPluginInit(z3y::IPluginRegistry* registry)
+extern "C" Z3Y_PLUGIN_API void z3yPluginInit(z3y::IPluginRegistry* registry)
 {
     if (!registry)
     {
         return;
     }
 
-    // ×¢²á $$IMPL_CLASS_NAME$$
-    // (Äú¿ÉÒÔÑ¡Ôñ RegisterComponent »ò RegisterService)
+    // æ³¨å†Œ $$IMPL_CLASS_NAME$$
+    // (æ‚¨å¯ä»¥é€‰æ‹© RegisterComponent æˆ– RegisterService)
     z3y::RegisterComponent<$$PLUGIN_NAMESPACE$$::$$IMPL_CLASS_NAME$$>(registry, "$$ALIAS$$");
 }
 )raw";

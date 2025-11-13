@@ -1,20 +1,20 @@
 /**
  * @file component_helpers.h
- * @brief [ÐÂ]
- * ¶¨Òå Z3Y_DEFINE_COMPONENT_ID
- * ºê£¬
- * ÓÃÓÚ¼ò»¯ÊµÏÖÀà¡£
- * @author (ÄúµÄÃû×Ö)
+ * @brief [æ–°]
+ * å®šä¹‰ Z3Y_DEFINE_COMPONENT_ID
+ * å®ï¼Œ
+ * ç”¨äºŽç®€åŒ–å®žçŽ°ç±»ã€‚
+ * @author (æ‚¨çš„åå­—)
  * @date 2025-11-12
  *
- * [ÐÞ¸Ä]
+ * [ä¿®æ”¹]
  * 1. [FIX]
- * »Ö¸´ÎªÕýÈ·µÄ¡°µ¥²ÎÊý¡±
- * ºê¡£
+ * æ¢å¤ä¸ºæ­£ç¡®çš„â€œå•å‚æ•°â€
+ * å®ã€‚
  * 2.
- * ¿ª·¢ÕßÓ¦½«Æä·ÅÖÃÔÚÊµÏÖÀàµÄ
+ * å¼€å‘è€…åº”å°†å…¶æ”¾ç½®åœ¨å®žçŽ°ç±»çš„
  * public
- * ·ÃÎÊÇøÄÚ¡£
+ * è®¿é—®åŒºå†…ã€‚
  */
 #pragma once
 
@@ -24,25 +24,25 @@
 #include "framework/class_id.h"
 
  /**
-  * @brief [¿ò¼Ü¸¨Öúºê]
-  * ÓÃÓÚÔÚÊµÏÖÀàÖÐÍ³Ò»¶¨Òå kClsid¡£
+  * @brief [æ¡†æž¶è¾…åŠ©å®]
+  * ç”¨äºŽåœ¨å®žçŽ°ç±»ä¸­ç»Ÿä¸€å®šä¹‰ kClsidã€‚
   *
   * @details
-  * ÕâÊÇÒ»¸ö·ÇÇÖÈëÊ½ºê£¬
-  * Ó¦·ÅÖÃÔÚÊµÏÖÀàµÄ public
-  * ·ÃÎÊÇøÄÚ¡£
+  * è¿™æ˜¯ä¸€ä¸ªéžä¾µå…¥å¼å®ï¼Œ
+  * åº”æ”¾ç½®åœ¨å®žçŽ°ç±»çš„ public
+  * è®¿é—®åŒºå†…ã€‚
   *
   * @param UuidString
-  * ÓÃÓÚÉú³É ClassId
-  * µÄÎ¨Ò» UUID ×Ö·û´® (
-  * ±ØÐëÊÇ±àÒëÆÚ³£Á¿)¡£
+  * ç”¨äºŽç”Ÿæˆ ClassId
+  * çš„å”¯ä¸€ UUID å­—ç¬¦ä¸² (
+  * å¿…é¡»æ˜¯ç¼–è¯‘æœŸå¸¸é‡)ã€‚
   */
 #define Z3Y_DEFINE_COMPONENT_ID(UuidString) \
     /** \
      * @brief 
-     * ÊµÏÖÀàµÄÎ¨Ò» ClassId (
-     * ÓÉ Z3Y_DEFINE_COMPONENT_ID
-     * ×Ô¶¯Éú³É)¡£ \
+     * å®žçŽ°ç±»çš„å”¯ä¸€ ClassId (
+     * ç”± Z3Y_DEFINE_COMPONENT_ID
+     * è‡ªåŠ¨ç”Ÿæˆ)ã€‚ \
      */ \
          static constexpr z3y::ClassId kClsid = z3y::ConstexprHash(UuidString);
 

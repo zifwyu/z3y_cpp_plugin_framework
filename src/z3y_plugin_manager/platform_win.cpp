@@ -1,25 +1,32 @@
 /**
  * @file platform_win.cpp
- * @brief z3y::PluginManager ÀàµÄ Windows Æ½Ì¨ÌØ¶¨ÊµÏÖ¡£
- * @author ËïÅôÓî
+ * @brief z3y::PluginManager ç±»çš„ Windows å¹³å°ç‰¹å®šå®ç°ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
  * ...
- * 8. [FIX] [!!]
- * ¸ü¸Ä clsid::kPluginManager
- * Îª PluginManager::kClsid
- * 9. [FIX] [!!]
- * ĞŞÕıÁË
- * UnloadAllPlugins
- * ÖĞ
- * factory
- * lambda
- * ¶Ô
- * PluginCast
- * µÄµ÷ÓÃ
+ * 16. [é‡æ„] [!!]
+ * æ–°å¢
+ * PlatformLoadLibrary,
+ * GetFunction,
+ * GetError
+ * çš„å®ç°
+ * 17. [FIX] [!!]
+ * æ–°å¢ PlatformIsPluginFile()
+ * çš„å®ç°
+ * 18. [FIX] [!!]
+ * PlatformLoadLibrary()
+ * ä¸å†æ£€æŸ¥æ‰©å±•å
+ * 19. [FIX] [!!]
+ * PlatformGetError()
+ * ç°åœ¨ç»Ÿä¸€ä½¿ç”¨ CP_UTF8
+ * (
+ * é…åˆ host
+ * çš„ SetConsoleOutputCP
+ * )
  */
 
- // ½öÔÚ Windows Æ½Ì¨ÉÏ±àÒë´ËÎÄ¼ş
+ // ä»…åœ¨ Windows å¹³å°ä¸Šç¼–è¯‘æ­¤æ–‡ä»¶
 #ifdef _WIN32
 
 #include "plugin_manager.h"
@@ -28,44 +35,58 @@
 #include <Windows.h>
 #include <algorithm>
 #include <stdexcept>
+#include <string> // [!! 
+                  // æ–°å¢ !!] 
+                  // 
+                  // 
+                  // 
 
 namespace z3y {
-    // --- Æ½Ì¨ÌØ¶¨µÄ¸¨Öúº¯Êı (Platform-Specific Helpers) ---
+    // --- å¹³å°ç‰¹å®šçš„è¾…åŠ©å‡½æ•° (Platform-Specific Helpers) ---
     namespace {
         /**
-         * @brief [Win32] ¼ÓÔØ¶¯Ì¬Á´½Ó¿â¡£
+         * @brief [Win32] åŠ è½½åŠ¨æ€é“¾æ¥åº“ã€‚
          */
         HMODULE LoadDynamicLibrary(const std::filesystem::path& path) {
-            // Ê¹ÓÃ W °æ (Unicode) API
+            // ä½¿ç”¨ W ç‰ˆ (Unicode) API
             return ::LoadLibraryW(path.c_str());
         }
 
         /**
-         * @brief [Win32] »ñÈ¡º¯ÊıµØÖ·¡£
+         * @brief [Win32] è·å–å‡½æ•°åœ°å€ã€‚
          */
         FARPROC GetFunctionAddress(HMODULE lib_handle, const char* func_name) {
             return ::GetProcAddress(lib_handle, func_name);
         }
 
         /**
-         * @brief [Win32] Ğ¶ÔØ¶¯Ì¬Á´½Ó¿â¡£
+         * @brief [Win32] å¸è½½åŠ¨æ€é“¾æ¥åº“ã€‚
          */
         void UnloadDynamicLibrary(HMODULE lib_handle) {
             ::FreeLibrary(lib_handle);
         }
 
         /**
-         * @brief ²å¼şÈë¿Úµãº¯ÊıµÄÇ©Ãû¡£
+         * @brief æ’ä»¶å…¥å£ç‚¹å‡½æ•°çš„ç­¾åã€‚
          */
-        using PluginInitFunc = void(IPluginRegistry*);
+         // [!! 
+         // é‡æ„ !!] 
+         // 
+         // 
+         // 
+         // 
+         // 
+         // 
+         // 
+         // using PluginInitFunc = void(IPluginRegistry*);
 
-    }  // ÄäÃûÃüÃû¿Õ¼ä
+    }  // åŒ¿åå‘½åç©ºé—´
 
 
     /**
-     * @brief [ĞŞ¸Ä]
-     * É¨ÃèÖ¸¶¨Ä¿Â¼(¼°Æä×ÓÄ¿Â¼)²¢¼ÓÔØËùÓĞ²å¼ş¡£
-     * (Windows Æ½Ì¨ÊµÏÖ)
+     * @brief [ä¿®æ”¹]
+     * æ‰«ææŒ‡å®šç›®å½•(åŠå…¶å­ç›®å½•)å¹¶åŠ è½½æ‰€æœ‰æ’ä»¶ã€‚
+     * (Windows å¹³å°å®ç°)
      */
     void PluginManager::LoadPluginsFromDirectory(
         const std::filesystem::path& dir, bool recursive,
@@ -76,151 +97,71 @@ namespace z3y {
         }
 
         if (recursive) {
-            // [ĞŞ¸Ä] ½Ó¿Ú 1: µİ¹éÉ¨Ãè
+            // [ä¿®æ”¹] æ¥å£ 1: é€’å½’æ‰«æ
             for (const auto& entry :
                 std::filesystem::recursive_directory_iterator(dir)) {
-                // [ĞŞ¸Ä]
-                // ½«ËùÓĞ¼ÓÔØÂß¼­Î¯ÍĞ¸øÄÚ²¿¸¨Öúº¯Êı
+                // [ä¿®æ”¹]
+                // å°†æ‰€æœ‰åŠ è½½é€»è¾‘å§”æ‰˜ç»™å†…éƒ¨è¾…åŠ©å‡½æ•°
                 LoadPluginInternal(entry.path(), init_func_name);
             }
         }
         else {
-            // [ĞŞ¸Ä] ½Ó¿Ú 2: ·Çµİ¹éÉ¨Ãè
+            // [ä¿®æ”¹] æ¥å£ 2: éé€’å½’æ‰«æ
             for (const auto& entry : std::filesystem::directory_iterator(dir)) {
-                // [ĞŞ¸Ä]
-                // ½«ËùÓĞ¼ÓÔØÂß¼­Î¯ÍĞ¸øÄÚ²¿¸¨Öúº¯Êı
+                // [ä¿®æ”¹]
+                // å°†æ‰€æœ‰åŠ è½½é€»è¾‘å§”æ‰˜ç»™å†…éƒ¨è¾…åŠ©å‡½æ•°
                 LoadPluginInternal(entry.path(), init_func_name);
             }
         }
     }
 
     /**
-     * @brief [ĞÂ]
-     * ¼ÓÔØÒ»¸öÖ¸¶¨µÄ²å¼ş DLL/SO ÎÄ¼ş¡£
-     * (Windows Æ½Ì¨ÊµÏÖ)
+     * @brief [æ–°]
+     * åŠ è½½ä¸€ä¸ªæŒ‡å®šçš„æ’ä»¶ DLL/SO æ–‡ä»¶ã€‚
+     * (Windows å¹³å°å®ç°)
      */
     bool PluginManager::LoadPlugin(const std::filesystem::path& file_path,
         const std::string& init_func_name) {
-        // [ĞŞ¸Ä] ½Ó¿Ú 3:
-        // Î¯ÍĞ¸øÄÚ²¿¸¨Öúº¯Êı
+        // [ä¿®æ”¹] æ¥å£ 3:
+        // å§”æ‰˜ç»™å†…éƒ¨è¾…åŠ©å‡½æ•°
         return LoadPluginInternal(file_path, init_func_name);
     }
 
     /**
-     * @brief [ĞÂ]
-     * ¼ÓÔØµ¥¸ö²å¼şÎÄ¼şµÄÄÚ²¿ºËĞÄÂß¼­¡£
-     * (Windows Æ½Ì¨ÊµÏÖ)
+     * @brief [!!
+     * é‡æ„ !!]
+     * LoadPluginInternal()
+     * å·²è¢«ç§»é™¤ï¼Œ
+     * å¹³å°æ— å…³é€»è¾‘
+     * * å·²ç§»è‡³
+     * plugin_manager.cpp
+     * *
      */
-    bool PluginManager::LoadPluginInternal(
-        const std::filesystem::path& file_path,
-        const std::string& init_func_name) {
-        // 1. [ĞÂ] ¼ì²éÊÇ·ñÎª³£¹æÎÄ¼şÒÔ¼°À©Õ¹Ãû
-        if (!std::filesystem::is_regular_file(file_path) ||
-            file_path.extension() != ".dll") {
-            return false;
-        }
-
-        PluginPtr<IEventBus> bus;
-        // [!! 
-        // ĞŞ¸´ !!] 
-        // 
-        // 
-        // 
-        try {
-            bus = GetService<IEventBus>(clsid::kEventBus);
-        }
-        catch (const PluginException&) {
-            /* ÔÚ¼ÓÔØÔçÆÚ½×¶Î bus
-            ¿ÉÄÜ²»´æÔÚ£¬
-            ºöÂÔ
-            */
-        }
-
-        std::string path_str = file_path.string();
-
-        // 2. [Ô­Âß¼­] ¼ÓÔØ DLL
-        HMODULE lib_handle = LoadDynamicLibrary(file_path);
-        if (!lib_handle) {
-            if (bus) {
-                bus->FireGlobal<event::PluginLoadFailureEvent>(
-                    path_str, "LoadLibrary (Win32) failed.");
-            }
-            return false;  // [ĞŞ¸Ä]
-        }
-
-        // 3. [Ô­Âß¼­] ²éÕÒÈë¿Úµãº¯Êı
-        PluginInitFunc* init_func = reinterpret_cast<PluginInitFunc*>(
-            GetFunctionAddress(lib_handle, init_func_name.c_str()));
-
-        if (!init_func) {
-            if (bus) {
-                bus->FireGlobal<event::PluginLoadFailureEvent>(
-                    path_str,
-                    "GetProcAddress failed (z3yPluginInit not found).");
-            }
-            UnloadDynamicLibrary(lib_handle);
-            return false;  // [ĞŞ¸Ä]
-        }
-
-        // 4. [Ô­Âß¼­] Ö´ĞĞÈë¿Úµãº¯Êı
-        try {
-            {
-                std::lock_guard<std::mutex> lock(registry_mutex_);
-                current_loading_plugin_path_ = path_str;
-            }
-
-            init_func(this);  // <-- ²å¼şÔÚ´Ë´¦µ÷ÓÃ RegisterComponent
-
-            // ¼ÓÔØ³É¹¦
-            {
-                std::lock_guard<std::mutex> lock(registry_mutex_);
-                current_loading_plugin_path_ = "";
-                loaded_libs_[path_str] = lib_handle;  // [ĞŞ¸Ä] ±£´æ¾ä±úÒÔ±ãĞ¶ÔØ
-            }
-
-            if (bus) {
-                bus->FireGlobal<event::PluginLoadSuccessEvent>(path_str);
-            }
-
-            return true;  // [ĞŞ¸Ä]
-        }
-        catch (const std::exception& e) {
-            // init_func Å×³öÒì³£
-            if (bus) {
-                bus->FireGlobal<event::PluginLoadFailureEvent>(path_str,
-                    e.what());
-            }
-            UnloadDynamicLibrary(lib_handle);
-            return false;  // [ĞŞ¸Ä]
-        }
-        catch (...) {
-            // init_func Å×³öÎ´ÖªÒì³£
-            if (bus) {
-                bus->FireGlobal<event::PluginLoadFailureEvent>(
-                    path_str, "Unknown exception during init.");
-            }
-            UnloadDynamicLibrary(lib_handle);
-            return false;  // [ĞŞ¸Ä]
-        }
-    }
 
 
-    /**
-     * @brief Ğ¶ÔØËùÓĞÒÑ¼ÓÔØµÄ²å¼ş²¢Çå¿ÕËùÓĞ×¢²á±í¡£
-     * (Windows Æ½Ì¨ÊµÏÖ)
-     */
+     /**
+      * @brief å¸è½½æ‰€æœ‰å·²åŠ è½½çš„æ’ä»¶å¹¶æ¸…ç©ºæ‰€æœ‰æ³¨å†Œè¡¨ã€‚
+      * (Windows å¹³å°å®ç°)
+      * [!!
+      * é‡æ„ !!]
+      */
     void PluginManager::UnloadAllPlugins() {
-        // [FIX] 
+        // 1. [!! 
+        //    é‡æ„ !!] 
+        //    è°ƒç”¨å…±äº«çš„æ ¸å¿ƒæ¸…ç†å‡½æ•°
+        ClearAllRegistries();
+
+        // --- 
         // 
         // 
+        // ---
         std::weak_ptr<PluginManager> weak_this_ptr =
             std::static_pointer_cast<PluginManager>(shared_from_this());
 
         auto factory = [weak_this_ptr]() -> PluginPtr<IComponent> {
             if (auto this_ptr = weak_this_ptr.lock()) {
-                // [!! 
-                // ĞŞ¸´ !!] 
                 // (
+                // 
                 // 
                 // )
                 InstanceError dummy_error;
@@ -229,65 +170,47 @@ namespace z3y {
             return nullptr;
             };
 
-        // (ÒÑÔÚÉÏÒ»ÂÖĞŞ¸´)
+        // (å·²åœ¨ä¸Šä¸€è½®ä¿®å¤)
         auto iids = PluginManager::GetInterfaceDetails();
 
-        {
-            // [Fix 2] (°²È«ĞŞ¸´):
-            std::scoped_lock lock(registry_mutex_, event_mutex_, queue_mutex_);
 
-            // --- [ĞŞÕı] 
-            // 
-            // 
-
-            // [ĞŞÕı] 1. 
-            // 
-            // (
-            // 
-            event_queue_ = {};
-            gc_queue_ = {};
-            sender_subscribers_.clear();
-            global_subscribers_.clear();
-            singletons_.clear();        // 
-            components_.clear();        // <-- [ĞŞÕı] 
-            alias_map_.clear();
-            current_loading_plugin_path_.clear();
-            global_sub_lookup_.clear();
-            sender_sub_lookup_.clear();
-
-            // [ĞŞÕı] 2. 
-            // 
-            // 
-            for (auto it = loaded_libs_.rbegin(); it != loaded_libs_.rend();
-                ++it) {
-                UnloadDynamicLibrary(static_cast<HMODULE>(it->second));
-            }
-
-            // [ĞŞÕı] 3. 
-            loaded_libs_.clear();
-
-        }  // [Fix 2] ÊÍ·ÅËùÓĞÈı¸öËø
-
-        // 6. ÔÚËøÍâÖØĞÂÒıµ¼ºËĞÄ·şÎñ (IEventBus / IPluginQuery)
+        // 6. åœ¨é”å¤–é‡æ–°å¼•å¯¼æ ¸å¿ƒæœåŠ¡ (IEventBus / IPluginQuery)
         RegisterComponent(
             clsid::kEventBus, factory,
             true /* is_singleton */, "z3y.core.eventbus" /* alias */,
-            iids
+            iids,
+            true // [!! 
+                 // ä¿®å¤ !!] 
+                 // 
+                 // 
+                 // 
+                 // 
+                 // 
+                 // 
         );
         RegisterComponent(
             clsid::kPluginQuery, factory,
             true /* is_singleton */, "z3y.core.pluginquery" /* alias */,
-            iids
+            iids,
+            false // [!! 
+                  // ä¿®å¤ !!] 
+                  // 
+                  // 
+                  // 
+                  // 
+                  // 
         );
         RegisterComponent(
-            PluginManager::kClsid, std::move(factory),  // [ĞŞ¸Ä] 
-            // Ê¹ÓÃ PluginManager::kClsid
+            PluginManager::kClsid, std::move(factory),  // [ä¿®æ”¹] 
+            // ä½¿ç”¨ PluginManager::kClsid
             true /* is_singleton */, "z3y.core.manager" /* alias */,
-            iids
+            iids,
+            false // [!! 
+                  // æ–°å¢ !!]
         );
 
 
-        // 7. (¿ÉÑ¡) ´¥·¢Ò»¸öÊÂ¼ş£¬Í¨ÖªÏµÍ³ÒÑÖØÖÃ
+        // 7. (å¯é€‰) è§¦å‘ä¸€ä¸ªäº‹ä»¶ï¼Œé€šçŸ¥ç³»ç»Ÿå·²é‡ç½®
         try {
             auto bus = GetService<IEventBus>(clsid::kEventBus);
             if (bus) {
@@ -302,6 +225,139 @@ namespace z3y {
             // 
         }
     }
+
+    /**
+     * @brief [!!
+     * é‡æ„ !!]
+     * å¹³å°ç›¸å…³çš„åº“å¸è½½ (
+     * Windows
+     * )
+     * (
+     * ç”± ClearAllRegistries
+     * è°ƒç”¨
+     * )
+     */
+    void PluginManager::PlatformSpecificLibraryUnload()
+    {
+        // 
+        // 
+        // 
+        // 
+
+        // 1. 
+        // 
+        // 
+        for (auto it = loaded_libs_.rbegin(); it != loaded_libs_.rend();
+            ++it) {
+            UnloadDynamicLibrary(static_cast<HMODULE>(it->second));
+        }
+
+        // 2. 
+        // 
+        // 
+        loaded_libs_.clear();
+    }
+
+    // --- [!! 
+    // 
+    // 
+    // 
+    // 
+    // 
+    // 
+    // !!] ---
+
+    /**
+     * @brief [!!
+     * æ–°å¢ !!]
+     * Windows
+     * å¹³å°çš„æ–‡ä»¶æ£€æŸ¥
+     */
+    bool PluginManager::PlatformIsPluginFile(const std::filesystem::path& path)
+    {
+        return std::filesystem::is_regular_file(path) &&
+            path.extension() == ".dll";
+    }
+
+    PluginManager::LibHandle PluginManager::PlatformLoadLibrary(
+        const std::filesystem::path& path)
+    {
+        // [!! 
+        // ä¿®å¤ !!] 
+        // 
+        // 
+        // 
+        // (
+        // 
+        // 
+        // 
+        // )
+        return ::LoadLibraryW(path.c_str());
+    }
+
+    void* PluginManager::PlatformGetFunction(
+        LibHandle handle, const char* func_name)
+    {
+        return ::GetProcAddress(static_cast<HMODULE>(handle), func_name);
+    }
+
+    void PluginManager::PlatformUnloadLibrary(LibHandle handle)
+    {
+        ::FreeLibrary(static_cast<HMODULE>(handle));
+    }
+
+    std::string PluginManager::PlatformGetError()
+    {
+        // 
+        // 
+        // 
+        DWORD error_id = ::GetLastError();
+        if (error_id == 0) {
+            return "No error (GetLastError() returned 0)";
+        }
+
+        LPWSTR buffer = nullptr;
+        // 
+        // 
+        // 
+        size_t size = FormatMessageW(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL, error_id, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPWSTR)&buffer, 0, NULL);
+
+        if (size == 0) {
+            return "Unknown error (FormatMessage failed)";
+        }
+
+        // 
+        // 
+        // 
+        std::wstring w_msg(buffer, size);
+        LocalFree(buffer);
+
+        // [!! 
+        // ä¿®å¤ !!] 
+        // 
+        // 
+        // 
+        // CP_ACP
+        // 
+        // 
+        // CP_UTF8
+        int out_size = WideCharToMultiByte(CP_UTF8, 0, w_msg.c_str(), (int)w_msg.length(),
+            NULL, 0, NULL, NULL);
+        if (out_size == 0) {
+            return "Failed to convert error message to UTF-8";
+        }
+
+        std::string msg(out_size, 0);
+        WideCharToMultiByte(CP_UTF8, 0, w_msg.c_str(), (int)w_msg.length(),
+            &msg[0], out_size, NULL, NULL);
+
+        return msg;
+    }
+
 
 }  // namespace z3y
 

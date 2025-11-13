@@ -1,26 +1,22 @@
 /**
  * @file plugin_manager.h
- * @brief ¶¨Òå z3y::PluginManager Àà£¬ÕâÊÇ¿ò¼ÜµÄºËĞÄ¡£
- * @author ËïÅôÓî
+ * @brief å®šä¹‰ z3y::PluginManager ç±»ï¼Œè¿™æ˜¯æ¡†æ¶çš„æ ¸å¿ƒã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
  * ...
- * 12. [ĞŞ¸Ä] [!!]
- * API
- * ÒÑ»Ö¸´Îª
- * "
- * ·½°¸ H
- * " (
- * Òì³£
+ * 18. [ä¿®æ”¹] [!!] [
+ * é‡æ„
+ * ]
+ * å£°æ˜äº†æ–°çš„å¹³å°æŠ½è±¡å±‚å‡½æ•°
+ * (PlatformLoadLibrary
+ * ç­‰
  * )
- * °æ±¾¡£
- * 13. [ĞŞ¸Ä] [!!]
- * * * * -
- * GetService/CreateInstance
- * ·µ»Ø PluginPtr<T>
- * -
- * Ê§°ÜÊ±
- * throw z3y::PluginException
+ * 19. [FIX] [!!] [
+ * é‡æ„
+ * ]
+ * å£°æ˜äº† PlatformIsPluginFile()
+ * ä»¥ä¿®å¤åŠ è½½ Bug
  */
 
 #pragma once
@@ -28,7 +24,7 @@
 #ifndef Z3Y_SRC_PLUGIN_MANAGER_PLUGIN_MANAGER_H_
 #define Z3Y_SRC_PLUGIN_MANAGER_PLUGIN_MANAGER_H_
 
- // °üº¬ËùÓĞ¿ò¼Ü½Ó¿Ú
+ // åŒ…å«æ‰€æœ‰æ¡†æ¶æ¥å£
 #include "framework/i_plugin_registry.h"
 #include "framework/i_event_bus.h"
 #include "framework/i_plugin_query.h"
@@ -37,13 +33,14 @@
 #include "framework/framework_events.h"
 #include "framework/connection_type.h"
 #include "framework/plugin_exceptions.h" // [!! 
-                                         // ĞÂÔö !!]
+                                         // æ–°å¢ !!]
 
-// °üº¬ C++ StdLib
+// åŒ…å« C++ StdLib
 #include <condition_variable>
 #include <filesystem>
 #include <functional>
-#include <map>
+#include <map>              // [ä¿ç•™] ç”¨äº std::weak_ptr é”® / loaded_libs_
+#include <unordered_map>    // [!! æ–°å¢ !!] ç”¨äºé«˜æ€§èƒ½æŸ¥æ‰¾
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -53,18 +50,18 @@
 #include <typeindex>
 #include <vector>
 
-// [ĞÂ] ÒıÈë¸¨Öúºê
+// [æ–°] å¼•å…¥è¾…åŠ©å®
 #include "framework/component_helpers.h" 
 
 namespace z3y {
 
     namespace clsid {
         /**
-         * @brief [ĞŞ¸Ä]
+         * @brief [ä¿®æ”¹]
          * PluginManager
-         * ×Ô¼ºµÄ "ÊµÏÖID"¡£
-         * (²»ÔÙĞèÒª£¬
-         * ÒÑÒÆÈëÀà¶¨ÒåÄÚ²¿)
+         * è‡ªå·±çš„ "å®ç°ID"ã€‚
+         * (ä¸å†éœ€è¦ï¼Œ
+         * å·²ç§»å…¥ç±»å®šä¹‰å†…éƒ¨)
          */
          // constexpr ClassId kPluginManager =
          //     ConstexprHash("z3y-core-plugin-manager-IMPL-UUID");
@@ -72,99 +69,100 @@ namespace z3y {
 
     /**
      * @class PluginManager
-     * @brief [¿ò¼ÜºËĞÄ] ²å¼ş¹ÜÀíÆ÷¡£
-     * [ĞŞ¸Ä] ¼Ì³Ğ IPluginQuery
-     * [ĞŞ¸Ä] ¸üĞÂ PluginImpl Ä£°å²ÎÊıÒÔ°üº¬
+     * @brief [æ¡†æ¶æ ¸å¿ƒ] æ’ä»¶ç®¡ç†å™¨ã€‚
+     * [ä¿®æ”¹] ç»§æ‰¿ IPluginQuery
+     * [ä¿®æ”¹] æ›´æ–° PluginImpl æ¨¡æ¿å‚æ•°ä»¥åŒ…å«
      * IPluginQuery
      */
     class PluginManager
         : public IPluginRegistry,
-        // public IPluginQuery,  // [FIX] ÒÆ³ı´ËĞĞ
-        public PluginImpl<PluginManager, // [ĞŞ¸Ä] 
-        // ÒÆ³ı kClsid 
-        // ²ÎÊı
+        // public IPluginQuery,  // [FIX] ç§»é™¤æ­¤è¡Œ
+        public PluginImpl<PluginManager, // [ä¿®æ”¹] 
+        // ç§»é™¤ kClsid 
+        // å‚æ•°
         IEventBus,
         IPluginQuery>
     {
     public:
         /**
-         * @brief [ĞŞ¸Ä]
+         * @brief [ä¿®æ”¹]
          * Z3Y_DEFINE_COMPONENT_ID
-         * ÒÑÒÆ»ØÀà *ÄÚ²¿*
+         * å·²ç§»å›ç±» *å†…éƒ¨*
          */
         Z3Y_DEFINE_COMPONENT_ID("z3y-core-plugin-manager-IMPL-UUID")
 
     public:
         /**
-         * @brief [¹¤³§º¯Êı] ´´½¨ PluginManager µÄÒ»¸öĞÂÊµÀı¡£
+         * @brief [å·¥å‚å‡½æ•°] åˆ›å»º PluginManager çš„ä¸€ä¸ªæ–°å®ä¾‹ã€‚
          */
         static PluginPtr<PluginManager> Create();
 
         /**
-         * @brief Îö¹¹º¯Êı¡£
-         * (ÒÑĞŞ¸Ä)
+         * @brief ææ„å‡½æ•°ã€‚
+         * (å·²ä¿®æ”¹)
          */
         virtual ~PluginManager();
 
-        // --- ×ÊÔ´¹ÜÀí£º½ûÖ¹¿½±´ºÍÒÆ¶¯ ---
+        // --- èµ„æºç®¡ç†ï¼šç¦æ­¢æ‹·è´å’Œç§»åŠ¨ ---
         PluginManager(const PluginManager&) = delete;
         PluginManager& operator=(const PluginManager&) = delete;
         PluginManager(PluginManager&&) = delete;
         PluginManager& operator=(PluginManager&&) = delete;
 
-        // --- ¹©ËŞÖ÷³ÌĞò(Host)µ÷ÓÃµÄ¹«¹² API ---
+        // --- ä¾›å®¿ä¸»ç¨‹åº(Host)è°ƒç”¨çš„å…¬å…± API ---
 
         /**
          * @brief [FIX]
          * Shutdown()
-         * ½Ó¿ÚÒÑ±»ÒÆ³ı¡£
-         * (ÒÑÍê³É)
+         * æ¥å£å·²è¢«ç§»é™¤ã€‚
+         * (å·²å®Œæˆ)
          */
          // void Shutdown();
 
          /**
-          * @brief [ĞŞ¸Ä] É¨ÃèÖ¸¶¨Ä¿Â¼²¢¼ÓÔØËùÓĞ²å¼ş¡£
+          * @brief [ä¿®æ”¹] æ‰«ææŒ‡å®šç›®å½•å¹¶åŠ è½½æ‰€æœ‰æ’ä»¶ã€‚
           */
         void LoadPluginsFromDirectory(
             const std::filesystem::path& dir, bool recursive = true,
             const std::string& init_func_name = "z3yPluginInit");
 
         /**
-         * @brief [ĞÂ] ¼ÓÔØÒ»¸öÖ¸¶¨µÄ²å¼ş DLL/SO ÎÄ¼ş¡£
+         * @brief [æ–°] åŠ è½½ä¸€ä¸ªæŒ‡å®šçš„æ’ä»¶ DLL/SO æ–‡ä»¶ã€‚
          */
         bool LoadPlugin(const std::filesystem::path& file_path,
             const std::string& init_func_name = "z3yPluginInit");
 
         /**
-         * @brief Ğ¶ÔØËùÓĞÒÑ¼ÓÔØµÄ²å¼ş¡£
+         * @brief å¸è½½æ‰€æœ‰å·²åŠ è½½çš„æ’ä»¶ã€‚
          */
         void UnloadAllPlugins();
 
 
         // --- [!! 
-        // ×îÖÕ API (
-        // ·½°¸ H
+        // æ–¹æ¡ˆ H 
+        // API (
+        // å¼‚å¸¸
         // ) !!] ---
 
         /**
          * @brief [API]
-         * Í¨¹ı×Ö·û´®±ğÃû´´½¨¡°ÆÕÍ¨×é¼ş¡±¡£
+         * é€šè¿‡å­—ç¬¦ä¸²åˆ«ååˆ›å»ºâ€œæ™®é€šç»„ä»¶â€ã€‚
          *
          * @return
-         * Ò»¸öÓĞĞ§µÄ PluginPtr<T>
-         * ¡£
+         * ä¸€ä¸ªæœ‰æ•ˆçš„ PluginPtr<T>
+         * ã€‚
          * @throws z3y::PluginException
-         * Èç¹û´´½¨Ê§°Ü
+         * å¦‚æœåˆ›å»ºå¤±è´¥
          * (
-         * °üº¬ÏêÏ¸´íÎóÂë
-         * )¡£
+         * åŒ…å«è¯¦ç»†é”™è¯¯ç 
+         * )ã€‚
          */
         template <typename T>
         PluginPtr<T> CreateInstance(const std::string& alias);
 
         /**
          * @brief [API]
-         * Í¨¹ı ClassId ´´½¨¡°ÆÕÍ¨×é¼ş¡±¡£
+         * é€šè¿‡ ClassId åˆ›å»ºâ€œæ™®é€šç»„ä»¶â€ã€‚
          * @throws z3y::PluginException
          */
         template <typename T>
@@ -172,7 +170,7 @@ namespace z3y {
 
         /**
          * @brief [API]
-         * Í¨¹ı×Ö·û´®±ğÃû»ñÈ¡¡°µ¥Àı·şÎñ¡±¡£
+         * é€šè¿‡å­—ç¬¦ä¸²åˆ«åè·å–â€œå•ä¾‹æœåŠ¡â€ã€‚
          * @throws z3y::PluginException
          */
         template <typename T>
@@ -180,30 +178,75 @@ namespace z3y {
 
         /**
          * @brief [API]
-         * Í¨¹ı ClassId »ñÈ¡¡°µ¥Àı·şÎñ¡±¡£
+         * é€šè¿‡ ClassId è·å–â€œå•ä¾‹æœåŠ¡â€ã€‚
          * @throws z3y::PluginException
          */
         template <typename T>
         PluginPtr<T> GetService(const ClassId& clsid);
 
 
+        // --- [!! 
+        // æ–¹æ¡ˆ B 
+        // API (
+        // æ˜¾å¼é»˜è®¤
+        // ) !!] ---
+
+        /**
+         * @brief [æ–° API]
+         * è·å–å·²æ³¨å†Œçš„
+         * *
+         * é»˜è®¤
+         * *
+         * â€œå•ä¾‹æœåŠ¡â€ã€‚
+         * @return
+         * ä¸€ä¸ªæœ‰æ•ˆçš„ PluginPtr<T>
+         * ã€‚
+         * @throws z3y::PluginException
+         * å¦‚æœæ²¡æœ‰æ‰¾åˆ°é»˜è®¤å®ç°ï¼Œ
+         * æˆ–è·å–å¤±è´¥ã€‚
+         */
+        template <typename T>
+        PluginPtr<T> GetDefaultService();
+
+        /**
+         * @brief [æ–° API]
+         * åˆ›å»ºå·²æ³¨å†Œçš„
+         * *
+         * é»˜è®¤
+         * *
+         * â€œæ™®é€šç»„ä»¶â€çš„æ–°å®ä¾‹ã€‚
+         * @return
+         * ä¸€ä¸ªæœ‰æ•ˆçš„ PluginPtr<T>
+         * ã€‚
+         * @throws z3y::PluginException
+         * å¦‚æœæ²¡æœ‰æ‰¾åˆ°é»˜è®¤å®ç°ï¼Œ
+         * æˆ–åˆ›å»ºå¤±è´¥ã€‚
+         */
+        template <typename T>
+        PluginPtr<T> CreateDefaultInstance();
+
+
     protected:
         /**
-         * @brief Ä¬ÈÏ¹¹Ôìº¯Êı£¨ÊÜ±£»¤£©¡£
+         * @brief é»˜è®¤æ„é€ å‡½æ•°ï¼ˆå—ä¿æŠ¤ï¼‰ã€‚
          */
         PluginManager();
 
-        // --- IPluginRegistry ½Ó¿ÚÊµÏÖ ---
+        // --- IPluginRegistry æ¥å£å®ç° ---
         /**
-         * @brief [ĞŞ¸Ä]
-         * ¸üĞÂÇ©ÃûÎª
+         * @brief [ä¿®æ”¹]
+         * æ›´æ–°ç­¾åä¸º
          * vector<InterfaceDetails>
+         * /
+         * å¢åŠ  is_default
          */
         void RegisterComponent(ClassId clsid, FactoryFunction factory,
             bool is_singleton, const std::string& alias,
-            std::vector<InterfaceDetails> implemented_interfaces) override;
+            std::vector<InterfaceDetails> implemented_interfaces,
+            bool is_default) override; // [!! 
+        // ä¿®æ”¹ !!]
 
-        // --- IEventBus ½Ó¿ÚÊµÏÖ ---
+// --- IEventBus æ¥å£å®ç° ---
         void Unsubscribe(std::shared_ptr<void> subscriber) override;
 
         /** @internal */
@@ -224,12 +267,12 @@ namespace z3y {
         void FireToSenderImpl(void* sender_key, EventId event_id,
             PluginPtr<Event> e_ptr) override;
 
-        // --- IPluginQuery ½Ó¿ÚÊµÏÖ ---
+        // --- IPluginQuery æ¥å£å®ç° ---
         std::vector<ComponentDetails> GetAllComponents() override;
         bool GetComponentDetails(ClassId clsid,
             ComponentDetails& out_details) override;
         bool GetComponentDetailsByAlias(const std::string& alias,
-            ComponentDetails& out_details) override; // (ÒÑÍê³É)
+            ComponentDetails& out_details) override; // (å·²å®Œæˆ)
         std::vector<ComponentDetails> FindComponentsImplementing(
             InterfaceId iid) override;
         std::vector<std::string> GetLoadedPluginFiles() override;
@@ -238,39 +281,127 @@ namespace z3y {
 
     private:
         /**
-         * @brief [ĞÂ] ¼ÓÔØµ¥¸ö²å¼şÎÄ¼şµÄÄÚ²¿ºËĞÄÂß¼­¡£
+         * @brief [!!
+         * é‡æ„ !!]
+         * å¹³å°æ— å…³çš„åŠ è½½æ ¸å¿ƒé€»è¾‘
          */
         bool LoadPluginInternal(const std::filesystem::path& file_path,
             const std::string& init_func_name);
 
         /**
-         * @brief [ÄÚ²¿] Í¨¹ı±ğÃû²éÕÒ ClassId¡£
+         * @brief [å†…éƒ¨] é€šè¿‡åˆ«åæŸ¥æ‰¾ ClassIdã€‚
          */
         ClassId GetClsidFromAlias(const std::string& alias);
 
         /**
-         * @brief [ÄÚ²¿] ÊÂ¼şÑ­»·¹¤×÷Ïß³ÌµÄÖ÷º¯Êı¡£
+         * @brief [å†…éƒ¨] äº‹ä»¶å¾ªç¯å·¥ä½œçº¿ç¨‹çš„ä¸»å‡½æ•°ã€‚
          */
         void EventLoop();
 
+        /**
+         * @brief [!!
+         * æ–°å¢ !!]
+         * äº‹åŠ¡æ€§å›æ»š
+         * (
+         * åœ¨åŠ è½½å¤±è´¥æ—¶è°ƒç”¨
+         * )
+         */
+        void RollbackRegistrations(const std::vector<ClassId>& clsid_list);
+
+        /**
+         * @brief [!!
+         * é‡æ„ !!]
+         * å…±äº«çš„æ ¸å¿ƒæ¸…ç†å‡½æ•°
+         */
+        void ClearAllRegistries();
+
+
+        // --- [!! 
+        // 
+        // 
+        // !!] ---
         using LibHandle = void*;
 
         /**
+         * @brief [!!
+         * é‡æ„ !!]
+         * å¹³å°ç›¸å…³çš„åº“åŠ è½½ (
+         * åœ¨ platform_*.cpp
+         * ä¸­å®ç°
+         * )
+         */
+        LibHandle PlatformLoadLibrary(const std::filesystem::path& path);
+        /**
+         * @brief [!!
+         * é‡æ„ !!]
+         * å¹³å°ç›¸å…³çš„å‡½æ•°æŸ¥æ‰¾ (
+         * åœ¨ platform_*.cpp
+         * ä¸­å®ç°
+         * )
+         */
+        void* PlatformGetFunction(LibHandle handle, const char* func_name);
+        /**
+         * @brief [!!
+         * é‡æ„ !!]
+         * å¹³å°ç›¸å…³çš„åº“å¸è½½ (
+         * åœ¨ platform_*.cpp
+         * ä¸­å®ç°
+         * )
+         */
+        void PlatformUnloadLibrary(LibHandle handle);
+        /**
+         * @brief [!!
+         * é‡æ„ !!]
+         * å¹³å°ç›¸å…³çš„åº“å¸è½½ (
+         * åœ¨ platform_*.cpp
+         * ä¸­å®ç°
+         * )
+         */
+        void PlatformSpecificLibraryUnload();
+        /**
+         * @brief [!!
+         * é‡æ„ !!]
+         * å¹³å°ç›¸å…³çš„é”™è¯¯è·å– (
+         * åœ¨ platform_*.cpp
+         * ä¸­å®ç°
+         * )
+         */
+        std::string PlatformGetError();
+        /**
+         * @brief [!!
+         * æ–°å¢ !!] [
+         * é‡æ„
+         * ]
+         * å¹³å°ç›¸å…³çš„æ–‡ä»¶ç±»å‹æ£€æŸ¥
+         */
+        bool PlatformIsPluginFile(const std::filesystem::path& path);
+
+
+        /**
          * @struct ComponentInfo
-         * @brief [ĞŞ¸Ä]
-         * ´æ´¢ËùÓĞ×é¼şÔªÊı¾İ
+         * @brief [ä¿®æ”¹]
+         * å­˜å‚¨æ‰€æœ‰ç»„ä»¶å…ƒæ•°æ®
          */
         struct ComponentInfo {
             FactoryFunction factory;
             bool is_singleton;
             std::string alias;
             std::string source_plugin_path;
+
             /**
-             * @brief [ĞŞ¸Ä]
-             * ´æ´¢ InterfaceDetails
-             * ÁĞ±í
+             * @brief [ä¿®æ”¹]
+             * å­˜å‚¨ InterfaceDetails
+             * åˆ—è¡¨
              */
             std::vector<InterfaceDetails> implemented_interfaces;
+
+            /**
+             * @brief [!!
+             * æ–°å¢ !!]
+             * æ³¨å†Œæ—¶ is_default
+             * æ ‡è®°æ˜¯å¦ä¸º true
+             */
+            bool is_default_registration;
         };
 
         /**
@@ -284,40 +415,79 @@ namespace z3y {
         };
 
         /**
-         * @brief [¸¨Öúº¯Êı] ÇåÀíÒÑÊ§Ğ§µÄ(expired)¶©ÔÄÕß (weak_ptr)¡£
+         * @brief [è¾…åŠ©å‡½æ•°] æ¸…ç†å·²å¤±æ•ˆçš„(expired)è®¢é˜…è€… (weak_ptr)ã€‚
          */
         static void CleanupExpiredSubscriptions(
             std::vector<Subscription>& subs, bool check_sender_also,
             std::queue<std::weak_ptr<void>>& gc_queue);
 
         using EventCallbackList = std::vector<Subscription>;
-        using EventMap = std::map<EventId, EventCallbackList>;
-        using SenderMap = std::map<void*, EventMap>;
+        // [!! ä¿®æ”¹: ä½¿ç”¨ unordered_map !!]
+        using EventMap = std::unordered_map<EventId, EventCallbackList>;
+        // [!! ä¿®æ”¹: ä½¿ç”¨ unordered_map !!]
+        using SenderMap = std::unordered_map<void*, EventMap>;
         using EventTask = std::function<void()>;
 
+        // [ä¿ç•™ map] SubscriberLookupMapG å¿…é¡»ä½¿ç”¨ map
         using SubscriberLookupMapG =
             std::map<std::weak_ptr<void>, std::set<EventId>,
             std::owner_less<std::weak_ptr<void>>>;
+        // [ä¿ç•™ map] SubscriberLookupMapS å¿…é¡»ä½¿ç”¨ map
         using SubscriberLookupMapS =
             std::map<std::weak_ptr<void>, std::set<std::pair<void*, EventId>>,
             std::owner_less<std::weak_ptr<void>>>;
 
-        // --- ºËĞÄ³ÉÔ±±äÁ¿ (×é¼ş×¢²á) ---
+        // --- æ ¸å¿ƒæˆå‘˜å˜é‡ (ç»„ä»¶æ³¨å†Œ) ---
         std::mutex registry_mutex_;
-        std::map<ClassId, ComponentInfo> components_;  // [ĞŞ¸Ä]
-        std::map<ClassId, std::weak_ptr<IComponent>> singletons_;
+        // [!! ä¿®æ”¹: ä½¿ç”¨ unordered_map !!]
+        std::unordered_map<ClassId, ComponentInfo> components_;  // [ä¿®æ”¹]
+        // [!! ä¿®æ”¹: ä½¿ç”¨ unordered_map !!]
+        std::unordered_map<ClassId, std::weak_ptr<IComponent>> singletons_;
+        // [!! æ¢å¤: å¿…é¡»ä½¿ç”¨ std::map æ¥æ”¯æŒ rbegin()/rend() !!]
         std::map<std::string, LibHandle> loaded_libs_;
-        std::map<std::string, ClassId> alias_map_;
+        // [!! ä¿®æ”¹: ä½¿ç”¨ unordered_map !!]
+        std::unordered_map<std::string, ClassId> alias_map_;
         std::string current_loading_plugin_path_;
 
-        // --- ÊÂ¼ş×ÜÏß³ÉÔ± ---
+        /**
+         * @brief [!!
+         * æ–°å¢ !!]
+         * ç”¨äº "
+         * æ˜¾å¼é»˜è®¤
+         * "
+         * æ–¹æ¡ˆã€‚
+         * * æ˜ å°„
+         * InterfaceId ->
+         * é»˜è®¤çš„ ClassId
+         */
+         // [!! ä¿®æ”¹: ä½¿ç”¨ unordered_map !!]
+        std::unordered_map<InterfaceId, ClassId> default_map_;
+
+        /**
+         * @brief [!!
+         * æ–°å¢ !!]
+         * ç”¨äºäº‹åŠ¡æ€§åŠ è½½
+         * /
+         * å›æ»šã€‚
+         * * * * æŒ‡å‘å½“å‰åŠ è½½ä¼šè¯çš„
+         * added_components
+         * åˆ—è¡¨ã€‚
+         */
+        std::vector<ClassId>* current_added_components_;
+
+
+        // --- äº‹ä»¶æ€»çº¿æˆå‘˜ ---
         std::recursive_mutex event_mutex_;
+        // [!! ä¿®æ”¹: ä½¿ç”¨ unordered_map (via EventMap) !!]
         EventMap global_subscribers_;
+        // [!! ä¿®æ”¹: ä½¿ç”¨ unordered_map (via SenderMap) !!]
         SenderMap sender_subscribers_;
+        // [ä¿ç•™ map] global_sub_lookup_ ä½¿ç”¨ map
         SubscriberLookupMapG global_sub_lookup_;
+        // [ä¿ç•™ map] sender_sub_lookup_ ä½¿ç”¨ map
         SubscriberLookupMapS sender_sub_lookup_;
 
-        // --- Òì²½ÊÂ¼ş×ÜÏß³ÉÔ± ---
+        // --- å¼‚æ­¥äº‹ä»¶æ€»çº¿æˆå‘˜ ---
         std::thread event_loop_thread_;
         std::queue<EventTask> event_queue_;
         std::mutex queue_mutex_;
@@ -328,27 +498,27 @@ namespace z3y {
     };
 
     // --- [!! 
-    // ·½°¸ H 
+    // æ–¹æ¡ˆ H 
     // API 
-    // ÊµÏÖ !!] ---
+    // å®ç° !!] ---
     // (
-    // Ä£°åÊµÏÖ±ØĞë·ÅÔÚÍ·ÎÄ¼şÖĞ
+    // æ¨¡æ¿å®ç°å¿…é¡»æ”¾åœ¨å¤´æ–‡ä»¶ä¸­
     // )
 
     template <typename T>
     PluginPtr<T> PluginManager::CreateInstance(const std::string& alias) {
         // 1. 
-        // ²éÕÒ±ğÃû
+        // æŸ¥æ‰¾åˆ«å
         ClassId clsid = GetClsidFromAlias(alias);
         if (clsid == 0) {
             // [!! 
-            // Å×³ö !!]
+            // æŠ›å‡º !!]
             throw PluginException(InstanceError::kErrorAliasNotFound,
                 "Alias '" + alias + "' not found.");
         }
         // 2. 
-        // Î¯ÍĞ¸ø CLSID 
-        // °æ±¾
+        // å§”æ‰˜ç»™ CLSID 
+        // ç‰ˆæœ¬
         return CreateInstance<T>(clsid);
     }
 
@@ -356,22 +526,23 @@ namespace z3y {
     PluginPtr<T> PluginManager::CreateInstance(const ClassId& clsid) {
         FactoryFunction factory;
         {
+            // Note: components_ is now unordered_map, find() is O(1) avg.
             std::lock_guard<std::mutex> lock(registry_mutex_);
             auto it = components_.find(clsid);
 
             // 1. 
-            // ¼ì²é CLSID 
-            // ÊÇ·ñ´æÔÚ
+            // æ£€æŸ¥ CLSID 
+            // æ˜¯å¦å­˜åœ¨
             if (it == components_.end()) {
                 // [!! 
-                // Å×³ö !!]
+                // æŠ›å‡º !!]
                 throw PluginException(InstanceError::kErrorClsidNotFound);
             }
             // 2. 
-            // ¼ì²éÊÇ·ñÎªÆÕÍ¨×é¼ş
+            // æ£€æŸ¥æ˜¯å¦ä¸ºæ™®é€šç»„ä»¶
             if (it->second.is_singleton) {
                 // [!! 
-                // Å×³ö !!]
+                // æŠ›å‡º !!]
                 throw PluginException(InstanceError::kErrorNotAComponent,
                     "CLSID is a service, use GetService() instead.");
             }
@@ -379,7 +550,7 @@ namespace z3y {
         }
 
         // 3. 
-        // ´´½¨ÊµÀı
+        // åˆ›å»ºå®ä¾‹
         // (
         // 
         // 
@@ -387,21 +558,21 @@ namespace z3y {
         auto base_obj = factory();
         if (!base_obj) {
             // [!! 
-            // Å×³ö !!]
+            // æŠ›å‡º !!]
             throw PluginException(InstanceError::kErrorFactoryFailed);
         }
 
         // 4. [!! 
-        //    ºËĞÄ !!] 
-        //    Ö´ĞĞÀàĞÍºÍ°æ±¾¼ì²é
+        //    æ ¸å¿ƒ !!] 
+        //    æ‰§è¡Œç±»å‹å’Œç‰ˆæœ¬æ£€æŸ¥
         InstanceError cast_result = InstanceError::kSuccess;
         PluginPtr<T> out_ptr = PluginCast<T>(base_obj, cast_result);
 
         // 5. 
-        // ¼ì²é×ª»»½á¹û
+        // æ£€æŸ¥è½¬æ¢ç»“æœ
         if (cast_result != InstanceError::kSuccess) {
             // [!! 
-            // Å×³ö !!] (
+            // æŠ›å‡º !!] (
             // 
             // 
             // )
@@ -418,17 +589,17 @@ namespace z3y {
     template <typename T>
     PluginPtr<T> PluginManager::GetService(const std::string& alias) {
         // 1. 
-        // ²éÕÒ±ğÃû
+        // æŸ¥æ‰¾åˆ«å
         ClassId clsid = GetClsidFromAlias(alias);
         if (clsid == 0) {
             // [!! 
-            // Å×³ö !!]
+            // æŠ›å‡º !!]
             throw PluginException(InstanceError::kErrorAliasNotFound,
                 "Alias '" + alias + "' not found.");
         }
         // 2. 
-        // Î¯ÍĞ¸ø CLSID 
-        // °æ±¾
+        // å§”æ‰˜ç»™ CLSID 
+        // ç‰ˆæœ¬
         return GetService<T>(clsid);
     }
 
@@ -437,25 +608,27 @@ namespace z3y {
         std::lock_guard<std::mutex> lock(registry_mutex_);
         InstanceError cast_result = InstanceError::kSuccess;
 
+        // Note: components_ is now unordered_map, find() is O(1) avg.
         auto it_factory = components_.find(clsid);
         // 1. 
-        // ¼ì²é CLSID
+        // æ£€æŸ¥ CLSID
         if (it_factory == components_.end()) {
             // [!! 
-            // Å×³ö !!]
+            // æŠ›å‡º !!]
             throw PluginException(InstanceError::kErrorClsidNotFound);
         }
         // 2. 
-        // ¼ì²éÊÇ·ñÎª·şÎñ
+        // æ£€æŸ¥æ˜¯å¦ä¸ºæœåŠ¡
         if (!it_factory->second.is_singleton) {
             // [!! 
-            // Å×³ö !!]
+            // æŠ›å‡º !!]
             throw PluginException(InstanceError::kErrorNotAService,
                 "CLSID is a component, use CreateInstance() instead.");
         }
 
         // 3. 
-        // ¼ì²éµ¥Àı»º´æ
+        // æ£€æŸ¥å•ä¾‹ç¼“å­˜
+        // Note: singletons_ is now unordered_map, find() is O(1) avg.
         auto it_inst = singletons_.find(clsid);
         if (it_inst != singletons_.end()) {
             if (auto locked_ptr = it_inst->second.lock()) {
@@ -468,7 +641,7 @@ namespace z3y {
                 PluginPtr<T> out_ptr = PluginCast<T>(locked_ptr, cast_result);
                 if (cast_result != InstanceError::kSuccess) {
                     // [!! 
-                    // Å×³ö !!]
+                    // æŠ›å‡º !!]
                     throw PluginException(cast_result, "PluginCast failed for cached service.");
                 }
                 return out_ptr;
@@ -476,33 +649,104 @@ namespace z3y {
         }
 
         // 4. 
-        // »º´æÖĞÃ»ÓĞ£¬
-        // ´´½¨ĞÂÊµÀı
+        // ç¼“å­˜ä¸­æ²¡æœ‰ï¼Œ
+        // åˆ›å»ºæ–°å®ä¾‹
         auto base_obj = it_factory->second.factory();
         if (!base_obj) {
             // [!! 
-            // Å×³ö !!]
+            // æŠ›å‡º !!]
             throw PluginException(InstanceError::kErrorFactoryFailed);
         }
 
         // 5. [!! 
-        //    ºËĞÄ !!] 
-        //    Ö´ĞĞÀàĞÍºÍ°æ±¾¼ì²é
+        //    æ ¸å¿ƒ !!] 
+        //    æ‰§è¡Œç±»å‹å’Œç‰ˆæœ¬æ£€æŸ¥
         PluginPtr<T> out_ptr = PluginCast<T>(base_obj, cast_result);
 
         // 6. 
-        // ¼ì²é×ª»»½á¹û
+        // æ£€æŸ¥è½¬æ¢ç»“æœ
         if (cast_result != InstanceError::kSuccess) {
             // [!! 
-            // Å×³ö !!]
+            // æŠ›å‡º !!]
             throw PluginException(cast_result, "PluginCast failed for new service.");
         }
 
         // 7. 
-        // ×ª»»³É¹¦£¬
-        // ´æÈë»º´æ²¢·µ»Ø
+        // è½¬æ¢æˆåŠŸï¼Œ
+        // å­˜å…¥ç¼“å­˜å¹¶è¿”å›
         singletons_[clsid] = base_obj;
         return out_ptr;
+    }
+
+    // --- [!! 
+    // æ–¹æ¡ˆ B 
+    // API 
+    // å®ç° !!] ---
+
+    template <typename T>
+    PluginPtr<T> PluginManager::GetDefaultService()
+    {
+        // 
+        // 
+        // 
+        static_assert(std::is_base_of_v<IComponent, T>, "T must derive from IComponent");
+
+        InterfaceId iid = T::kIid;
+        ClassId default_clsid = 0;
+
+        {
+            // 
+            // 
+            // 
+            // 
+            std::lock_guard<std::mutex> lock(registry_mutex_);
+            // Note: default_map_ is now unordered_map, find() is O(1) avg.
+            auto it = default_map_.find(iid);
+
+            if (it == default_map_.end()) {
+                // [!! 
+                // æŠ›å‡º !!]
+                throw PluginException(InstanceError::kErrorAliasNotFound,
+                    "No 'default' implementation was registered for interface " + std::string(T::kName));
+            }
+            default_clsid = it->second;
+        } // 
+          // 
+          // 
+
+        // 
+        // 
+        // 
+        // 
+        return GetService<T>(default_clsid);
+    }
+
+    template <typename T>
+    PluginPtr<T> PluginManager::CreateDefaultInstance()
+    {
+        // 
+        // 
+        // 
+        static_assert(std::is_base_of_v<IComponent, T>, "T must derive from IComponent");
+
+        InterfaceId iid = T::kIid;
+        ClassId default_clsid = 0;
+
+        {
+            std::lock_guard<std::mutex> lock(registry_mutex_);
+            // Note: default_map_ is now unordered_map, find() is O(1) avg.
+            auto it = default_map_.find(iid);
+
+            if (it == default_map_.end()) {
+                // [!! 
+                // æŠ›å‡º !!]
+                throw PluginException(InstanceError::kErrorAliasNotFound,
+                    "No 'default' implementation was registered for interface " + std::string(T::kName));
+            }
+            default_clsid = it->second;
+        }
+
+        return CreateInstance<T>(default_clsid);
     }
 
 

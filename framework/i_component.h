@@ -1,17 +1,17 @@
 /**
  * @file i_component.h
- * @brief ¶¨Òå²å¼ş¿ò¼ÜµÄÍ³Ò»×é¼ş»ùÀà IComponent ºÍ±ê×¼ÖÇÄÜÖ¸Õë PluginPtr¡£
- * @author ËïÅôÓî
+ * @brief å®šä¹‰æ’ä»¶æ¡†æ¶çš„ç»Ÿä¸€ç»„ä»¶åŸºç±» IComponent å’Œæ ‡å‡†æ™ºèƒ½æŒ‡é’ˆ PluginPtrã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * [ĞŞ¸Ä]
+ * [ä¿®æ”¹]
  * ...
- * 4. [ĞŞ¸Ä] [!!]
+ * 4. [ä¿®æ”¹] [!!]
  * QueryInterfaceRaw
- * Ç©ÃûÒÑ¸ü¸ÄÎª½ÓÊÜ
+ * ç­¾åå·²æ›´æ”¹ä¸ºæ¥å—
  * InstanceError&
  * out_result (
- * Ìæ»» GetInstanceResult
+ * æ›¿æ¢ GetInstanceResult
  * )
  */
 
@@ -21,16 +21,16 @@
 #define Z3Y_FRAMEWORK_I_COMPONENT_H_
 
 #include "framework/class_id.h"
-#include "framework/interface_helpers.h" // [ĞÂ]
+#include "framework/interface_helpers.h" // [æ–°]
 #include "framework/plugin_exceptions.h" // [!! 
- // ĞÂÔö !!]
+ // æ–°å¢ !!]
 #include <memory>
 #include <typeindex>
 
 namespace z3y {
     /**
      * @typedef PluginPtr
-     * @brief ¿ò¼ÜÖĞÓÃÓÚ¹ÜÀíËùÓĞ²å¼şÉúÃüÖÜÆÚµÄ±ê×¼ÖÇÄÜÖ¸Õë¡£
+     * @brief æ¡†æ¶ä¸­ç”¨äºç®¡ç†æ‰€æœ‰æ’ä»¶ç”Ÿå‘½å‘¨æœŸçš„æ ‡å‡†æ™ºèƒ½æŒ‡é’ˆã€‚
      */
     template <typename T>
     using PluginPtr = std::shared_ptr<T>;
@@ -38,36 +38,36 @@ namespace z3y {
 
     /**
      * @class IComponent
-     * @brief ¿ò¼ÜÖĞËùÓĞ¡°½Ó¿Ú¡±ºÍ¡°ÊµÏÖ¡±¶¼±ØĞë¼Ì³ĞµÄ *Î¨Ò»* Í³Ò»»ùÀà¡£
+     * @brief æ¡†æ¶ä¸­æ‰€æœ‰â€œæ¥å£â€å’Œâ€œå®ç°â€éƒ½å¿…é¡»ç»§æ‰¿çš„ *å”¯ä¸€* ç»Ÿä¸€åŸºç±»ã€‚
      */
     class IComponent {
     public:
         /**
-         * @brief [ĞŞ¸Ä]
-         * Ê¹ÓÃ Z3Y_DEFINE_INTERFACE
-         * ºê (
-         * ¶¨ÒåÎª 1.0
-         * °æ±¾)
+         * @brief [ä¿®æ”¹]
+         * ä½¿ç”¨ Z3Y_DEFINE_INTERFACE
+         * å® (
+         * å®šä¹‰ä¸º 1.0
+         * ç‰ˆæœ¬)
          */
         Z3Y_DEFINE_INTERFACE(IComponent, "z3y-core-IComponent-IID-A0000001", \
             1, 0)
 
             /**
-             * @brief ĞéÎö¹¹º¯Êı£¨Ä¬ÈÏÊµÏÖ£©¡£
+             * @brief è™šææ„å‡½æ•°ï¼ˆé»˜è®¤å®ç°ï¼‰ã€‚
              */
             virtual ~IComponent() = default;
 
         /**
-         * @brief [ºËĞÄ] ÊÖ¶¯ÔËĞĞÊ±ÀàĞÍÊ¶±ğ£¨RTTI£©µÄ²éÑ¯º¯Êı£¨´¿Ğéº¯Êı£©¡£
+         * @brief [æ ¸å¿ƒ] æ‰‹åŠ¨è¿è¡Œæ—¶ç±»å‹è¯†åˆ«ï¼ˆRTTIï¼‰çš„æŸ¥è¯¢å‡½æ•°ï¼ˆçº¯è™šå‡½æ•°ï¼‰ã€‚
          *
-         * [ĞŞ¸Ä] [!!]
-         * Ç©ÃûÒÑ¸ü¸Ä£¬
-         * Ôö¼Ó InstanceError&
-         * ÒÔ±ã´«»ØÏêÏ¸µÄÊ§°ÜÔ­Òò¡£
+         * [ä¿®æ”¹] [!!]
+         * ç­¾åå·²æ›´æ”¹ï¼Œ
+         * å¢åŠ  InstanceError&
+         * ä»¥ä¾¿ä¼ å›è¯¦ç»†çš„å¤±è´¥åŸå› ã€‚
          */
         virtual void* QueryInterfaceRaw(InterfaceId iid, uint32_t major,
             uint32_t minor, InstanceError& out_result) = 0; // [!! 
-        // ĞŞ¸Ä !!]
+        // ä¿®æ”¹ !!]
     };
 
 

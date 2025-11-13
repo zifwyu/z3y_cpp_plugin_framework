@@ -1,19 +1,27 @@
 /**
  * @file i_plugin_registry.h
- * @brief ¶¨Òå z3y::IPluginRegistry ½Ó¿Ú£¬ÓÃÓÚ²å¼ş×¢²á¡£
- * @author ËïÅôÓî
+ * @brief å®šä¹‰ z3y::IPluginRegistry æ¥å£ï¼Œç”¨äºæ’ä»¶æ³¨å†Œã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * [ĞŞ¸Ä]£º
- * 1. [ĞŞ¸Ä]
+ * [ä¿®æ”¹]ï¼š
+ * 1. [ä¿®æ”¹]
  * RegisterComponent
- * Ôö¼Ó
+ * å¢åŠ 
  * implemented_interfaces
- * ²ÎÊı
- * ÀàĞÍ´Ó vector<InterfaceId>
- * ±äÎª
+ * å‚æ•°
+ * ç±»å‹ä» vector<InterfaceId>
+ * å˜ä¸º
  * vector<InterfaceDetails>
- * 2. ×ñ´Ó Google ÃüÃûÔ¼¶¨
+ * 2. éµä» Google å‘½åçº¦å®š
+ * 3. [ä¿®æ”¹] [!!]
+ * RegisterComponent
+ * å¢åŠ 
+ * "bool is_default"
+ * æ ‡è®°
+ * 4. [ä¿®æ”¹] [!!]
+ * å®šä¹‰ Z3Y_PLUGIN_API
+ * å®
  */
 
 #pragma once
@@ -23,51 +31,78 @@
 
 #include "framework/class_id.h"
 #include "framework/i_component.h"
-#include "framework/i_plugin_query.h" // [ĞÂ] ÒÀÀµ InterfaceDetails
+#include "framework/i_plugin_query.h" // [æ–°] ä¾èµ– InterfaceDetails
 #include <functional>
 #include <string>
 #include <vector>
 
 namespace z3y {
 
-    /**
-     * @typedef FactoryFunction
-     * @brief ¶¨ÒåÒ»¸ö¡°¹¤³§º¯Êı¡±µÄ±ê×¼Ç©Ãû¡£
-     */
+    // --- [!! 
+    // æ–°å¢ !!] 
+    // 
+    // 
+    // 
+#ifdef _WIN32
+#define Z3Y_PLUGIN_API __declspec(dllexport)
+#else
+#define Z3Y_PLUGIN_API __attribute__((visibility("default")))
+#endif
+
+/**
+ * @typedef FactoryFunction
+ * @brief å®šä¹‰ä¸€ä¸ªâ€œå·¥å‚å‡½æ•°â€çš„æ ‡å‡†ç­¾åã€‚
+ */
     using FactoryFunction = std::function<PluginPtr<IComponent>()>;
 
     /**
      * @class IPluginRegistry
-     * @brief [¿ò¼ÜºËĞÄ] ²å¼ş×¢²á±í½Ó¿Ú¡£
+     * @brief [æ¡†æ¶æ ¸å¿ƒ] æ’ä»¶æ³¨å†Œè¡¨æ¥å£ã€‚
      */
     class IPluginRegistry {
     public:
         /**
-         * @brief ĞéÎö¹¹º¯Êı¡£
+         * @brief è™šææ„å‡½æ•°ã€‚
          */
         virtual ~IPluginRegistry() = default;
 
         /**
-         * @brief ²å¼şµ÷ÓÃ´Ëº¯ÊıÀ´×¢²áÒ»¸ö×é¼şÀà¡£
-         * [ĞŞ¸Ä]
-         * ²ÎÊıÀàĞÍ¸ÄÎª
+         * @brief æ’ä»¶è°ƒç”¨æ­¤å‡½æ•°æ¥æ³¨å†Œä¸€ä¸ªç»„ä»¶ç±»ã€‚
+         * [ä¿®æ”¹]
+         * å‚æ•°ç±»å‹æ”¹ä¸º
          * std::vector<InterfaceDetails>
+         * [ä¿®æ”¹] [!!]
+         * å¢åŠ  is_default
+         * å‚æ•°
          *
-         * @param[in] clsid ÀàµÄÎ¨Ò»ID (uint64_t)¡£
-         * @param[in] factory Ò»¸ö lambda£¬ÓÃÓÚ´´½¨¸ÃÀàµÄĞÂÊµÀı¡£
+         * @param[in] clsid ç±»çš„å”¯ä¸€ID (uint64_t)ã€‚
+         * @param[in] factory ä¸€ä¸ª lambdaï¼Œç”¨äºåˆ›å»ºè¯¥ç±»çš„æ–°å®ä¾‹ã€‚
          * @param[in] is_singleton
-         * - false: ×¢²áÎªÆÕÍ¨×é¼ş ("¹¤¾ß")¡£
-         * - true: ×¢²áÎª¡°µ¥Àı·şÎñ¡± ("¹«¹²ÉèÊ©")¡£
-         * @param[in] alias Ò»¸ö¿ÉÑ¡µÄ¡¢ÈËÀà¿É¶ÁµÄ×Ö·û´®±ğÃû¡£
-         * @param[in] implemented_interfaces [ĞŞ¸Ä]
-         * ´Ë×é¼şÊµÏÖµÄËùÓĞ½Ó¿ÚÏêÇé (Id
-         * ºÍ Name)
-         * ÁĞ±í¡£
+         * - false: æ³¨å†Œä¸ºæ™®é€šç»„ä»¶ ("å·¥å…·")ã€‚
+         * - true: æ³¨å†Œä¸ºâ€œå•ä¾‹æœåŠ¡â€ ("å…¬å…±è®¾æ–½")ã€‚
+         * @param[in] alias ä¸€ä¸ªå¯é€‰çš„ã€äººç±»å¯è¯»çš„å­—ç¬¦ä¸²åˆ«åã€‚
+         * @param[in] implemented_interfaces [ä¿®æ”¹]
+         * æ­¤ç»„ä»¶å®ç°çš„æ‰€æœ‰æ¥å£è¯¦æƒ… (Id
+         * å’Œ Name)
+         * åˆ—è¡¨ã€‚
+         * @param[in] is_default [!!
+         * æ–°å¢ !!]
+         * å¦‚æœä¸º true,
+         * å°†æ­¤ç»„ä»¶æ³¨å†Œä¸ºæ‰€æœ‰
+         * *
+         * é IComponent
+         * * * æ¥å£çš„
+         * *
+         * é»˜è®¤
+         * *
+         * å®ç°ã€‚
          */
         virtual void RegisterComponent(
             ClassId clsid, FactoryFunction factory, bool is_singleton,
             const std::string& alias,
-            std::vector<InterfaceDetails> implemented_interfaces) = 0;
+            std::vector<InterfaceDetails> implemented_interfaces,
+            bool is_default = false) = 0; // [!! 
+        // æ–°å¢ !!]
     };
 
 }  // namespace z3y

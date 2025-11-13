@@ -1,23 +1,23 @@
 /**
  * @file plugin_cast.h
- * @brief ¶¨Òå z3y::PluginCast Ä£°å£¬ÓÃÓÚ°²È«µÄ½Ó¿Ú×ª»»¡£
- * @author ËïÅôÓî
+ * @brief å®šä¹‰ z3y::PluginCast æ¨¡æ¿ï¼Œç”¨äºå®‰å…¨çš„æ¥å£è½¬æ¢ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * [v2.2 ĞŞ¸´]:
+ * [v2.2 ä¿®å¤]:
  * ...
- * 4. [ĞŞ¸Ä] [!!]
+ * 4. [ä¿®æ”¹] [!!]
  * PluginCastImpl
- * ÏÖÔÚ½ÓÊÜ²¢´«µİ
+ * ç°åœ¨æ¥å—å¹¶ä¼ é€’
  * InstanceError&
  * out_result
- * 5. [ĞŞ¸Ä] [!!]
- * ÒÆ³ıÁËÒÑ·ÏÆúµÄ (
- * ²»´ø error
+ * 5. [ä¿®æ”¹] [!!]
+ * ç§»é™¤äº†å·²åºŸå¼ƒçš„ (
+ * ä¸å¸¦ error
  * )
- * µÄ
+ * çš„
  * PluginCast
- * °æ±¾
+ * ç‰ˆæœ¬
  */
 
 #pragma once
@@ -26,62 +26,62 @@
 #define Z3Y_FRAMEWORK_PLUGIN_CAST_H_
 
 #include "framework/i_component.h"
-#include "framework/class_id.h"  // [ĞÂÔö]
+#include "framework/class_id.h"  // [æ–°å¢]
 #include "framework/plugin_exceptions.h"  // [!! 
- // ĞÂÔö !!]
-#include <memory>                // ÒÀÀµ std::static_pointer_cast
+ // æ–°å¢ !!]
+#include <memory>                // ä¾èµ– std::static_pointer_cast
 
 namespace z3y {
-    // --- ÄÚ²¿ÊµÏÖ (¶ÔÓÃ»§Òş²Ø) ---
+    // --- å†…éƒ¨å®ç° (å¯¹ç”¨æˆ·éšè—) ---
     namespace internal {
         /**
-         * @brief [ÄÚ²¿] PluginCast µÄºËĞÄÊµÏÖ¡£
+         * @brief [å†…éƒ¨] PluginCast çš„æ ¸å¿ƒå®ç°ã€‚
          *
-         * [ĞŞ¸Ä] [!!]
-         * ÏÖÔÚµ÷ÓÃ
+         * [ä¿®æ”¹] [!!]
+         * ç°åœ¨è°ƒç”¨
          * QueryInterfaceRaw(...,
          * out_result)
          */
         template <typename T>
         PluginPtr<T> PluginCastImpl(PluginPtr<IComponent> component,
             InstanceError& out_result) { // [!! 
-            // ĞŞ¸Ä !!]
+            // ä¿®æ”¹ !!]
             if (!component) {
                 // 
                 // (
-                // ÕâÖÖÇé¿öÀíÂÛÉÏÓ¦ÓÉ
+                // è¿™ç§æƒ…å†µç†è®ºä¸Šåº”ç”±
                 // PluginManager
-                // ²¶»ñ
+                // æ•è·
                 // )
                 out_result = InstanceError::kErrorInternal; // [!! 
-                // ĞŞ¸Ä !!]
+                // ä¿®æ”¹ !!]
                 return nullptr;
             }
 
-            // 1. [ºËĞÄ] 
-            //    [ĞŞ¸Ä] 
-            //    ´«µİ°æ±¾²¢½ÓÊÕ
+            // 1. [æ ¸å¿ƒ] 
+            //    [ä¿®æ”¹] 
+            //    ä¼ é€’ç‰ˆæœ¬å¹¶æ¥æ”¶
             //    out_result
             void* interface_ptr = component->QueryInterfaceRaw(
                 T::kIid, T::kVersionMajor, T::kVersionMinor,
                 out_result); // [!! 
-            // ĞŞ¸Ä !!]
+            // ä¿®æ”¹ !!]
 
             if (!interface_ptr) {
                 // 2. 
-                //    ×ª»»Ê§°Ü
+                //    è½¬æ¢å¤±è´¥
                 //    (out_result
-                //    ÒÑÓÉ QueryInterfaceRaw
-                //    ÉèÖÃ
+                //    å·²ç”± QueryInterfaceRaw
+                //    è®¾ç½®
                 //    )
                 return nullptr;
             }
 
             // 3. 
-            //    ×ª»»³É¹¦
+            //    è½¬æ¢æˆåŠŸ
             //    (out_result
-            //    ÒÑÓÉ QueryInterfaceRaw
-            //    ÉèÖÃÎª kSuccess
+            //    å·²ç”± QueryInterfaceRaw
+            //    è®¾ç½®ä¸º kSuccess
             //    )
             return PluginPtr<T>(component, static_cast<T*>(interface_ptr));
         }
@@ -90,22 +90,22 @@ namespace z3y {
 
 
     /**
-     * @brief [¿ò¼ÜºËĞÄ¹¤¾ß] ÔÚ¿ò¼Ü×é¼şÖ®¼ä½øĞĞ°²È«µÄ¶¯Ì¬ÀàĞÍ×ª»»¡£
+     * @brief [æ¡†æ¶æ ¸å¿ƒå·¥å…·] åœ¨æ¡†æ¶ç»„ä»¶ä¹‹é—´è¿›è¡Œå®‰å…¨çš„åŠ¨æ€ç±»å‹è½¬æ¢ã€‚
      * [!!
-     * ĞŞ¸Ä !!]
-     * ´Ë°æ±¾ÏÖÔÚÊÇÄÚ²¿ API
-     * £¬
-     * ±» PluginManager
-     * µ÷ÓÃ
+     * ä¿®æ”¹ !!]
+     * æ­¤ç‰ˆæœ¬ç°åœ¨æ˜¯å†…éƒ¨ API
+     * ï¼Œ
+     * è¢« PluginManager
+     * è°ƒç”¨
      */
     template <typename T>
     PluginPtr<T> PluginCast(PluginPtr<IComponent> component,
         InstanceError& out_result) { // [!! 
-        // ĞŞ¸Ä !!]
-// [ĞŞ¸Ä] 
-// ¼´Ê¹ÊÇ IComponent, 
-// Ò²±ØĞëÍ¨¹ı Impl 
-// ½øĞĞ°æ±¾¼ì²é
+        // ä¿®æ”¹ !!]
+// [ä¿®æ”¹] 
+// å³ä½¿æ˜¯ IComponent, 
+// ä¹Ÿå¿…é¡»é€šè¿‡ Impl 
+// è¿›è¡Œç‰ˆæœ¬æ£€æŸ¥
         if constexpr (std::is_same_v<T, IComponent>) {
             return internal::PluginCastImpl<T>(component, out_result);
         }
@@ -115,28 +115,28 @@ namespace z3y {
     }
 
     /**
-     * @brief [¿ò¼ÜºËĞÄ¹¤¾ß]
+     * @brief [æ¡†æ¶æ ¸å¿ƒå·¥å…·]
      * PluginCast
-     * µÄÖØÔØ
+     * çš„é‡è½½
      * [!!
-     * ĞŞ¸Ä !!]
-     * ´Ë°æ±¾ÏÖÔÚÊÇÄÚ²¿ API
-     * £¬
-     * ±» PluginManager
-     * µ÷ÓÃ
+     * ä¿®æ”¹ !!]
+     * æ­¤ç‰ˆæœ¬ç°åœ¨æ˜¯å†…éƒ¨ API
+     * ï¼Œ
+     * è¢« PluginManager
+     * è°ƒç”¨
      */
     template <typename T, typename U>
     PluginPtr<T> PluginCast(PluginPtr<U> component_interface,
         InstanceError& out_result) { // [!! 
-        // ĞŞ¸Ä !!]
+        // ä¿®æ”¹ !!]
 // 1. 
 //    (
-//    °²È«µØ×ª»»»Ø IComponent)
+//    å®‰å…¨åœ°è½¬æ¢å› IComponent)
         PluginPtr<IComponent> base_component =
             std::static_pointer_cast<IComponent>(component_interface);
 
         // 2. 
-        //    µ÷ÓÃ±ê×¼ÊµÏÖ
+        //    è°ƒç”¨æ ‡å‡†å®ç°
         return PluginCast<T>(base_component, out_result);
     }
 

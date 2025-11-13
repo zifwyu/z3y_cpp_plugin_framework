@@ -1,26 +1,37 @@
 /**
  * @file simple_impl_a.cpp
- * @brief SimpleImplA ÀàµÄÊµÏÖ¡£
- * @author ËïÅôÓî
+ * @brief SimpleImplA ç±»çš„å®ç°ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * [ĞŞ¸Ä]
- * 1. [ĞŞ¸Ä]
- * ÒÆÈë z3y::example
- * ÃüÃû¿Õ¼ä
+ * [ä¿®æ”¹]
+ * 1. [ä¿®æ”¹]
+ * ç§»å…¥ z3y::example
+ * å‘½åç©ºé—´
  * 2. [FIX]
- * ÒÆ³ı
+ * ç§»é™¤
  * 3. [FIX]
- * ÒÆ³ı´íÎóµÄ 'Add'
- * º¯Êı
+ * ç§»é™¤é”™è¯¯çš„ 'Add'
+ * å‡½æ•°
+ * 4. [ä¿®æ”¹] [!!]
+ * å¢åŠ è‡ªåŠ¨æ³¨å†Œå®
  */
 
 #include "simple_impl_a.h"
+#include "framework/z3y_plugin_sdk.h"
+ // æ–°å¢ !!]
 #include <iostream>
 #include <sstream>
 
+// [!! 
+// æ–°å¢ !!] 
+// 
+// 
+Z3Y_AUTO_REGISTER_COMPONENT(z3y::example::SimpleImplA, "Simple.A", true /* is_default */);
+
+
 namespace z3y {
-    namespace example { // [ĞŞ¸Ä]
+    namespace example { // [ä¿®æ”¹]
 
         SimpleImplA::SimpleImplA() {
             std::cout << "  [SimpleImplA] Instance Created (Constructor)."
@@ -32,7 +43,7 @@ namespace z3y {
                 << std::endl;
         }
 
-        // --- ISimple ½Ó¿ÚÊµÏÖ ---
+        // --- ISimple æ¥å£å®ç° ---
 
         std::string SimpleImplA::GetSimpleString() {
             return "Hello from SimpleImplA";

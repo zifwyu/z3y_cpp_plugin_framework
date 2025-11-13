@@ -1,27 +1,37 @@
 /**
  * @file logger_service.cpp
- * @brief LoggerService ÀàµÄÊµÏÖ¡£
- * @author ËïÅôÓî
+ * @brief LoggerService ç±»çš„å®ç°ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * [ĞŞ¸Ä]
- * 1. [ĞŞ¸Ä]
- * ÒÆÈë z3y::example
- * ÃüÃû¿Õ¼ä
+ * [ä¿®æ”¹]
+ * 1. [ä¿®æ”¹]
+ * ç§»å…¥ z3y::example
+ * å‘½åç©ºé—´
  * 2. [FIX]
- * °üº¬ <iostream>
+ * åŒ…å« <iostream>
  * 3. [FIX]
- * Ê¹ÓÃ lock_guard(mutex_)
+ * ä½¿ç”¨ lock_guard(mutex_)
+ * 4. [ä¿®æ”¹] [!!]
+ * å¢åŠ è‡ªåŠ¨æ³¨å†Œå®
  */
 
 #include "logger_service.h"
+#include "framework/z3y_plugin_sdk.h"
 #include <iostream>
 #include <mutex>
 
-namespace z3y {
-    namespace example { // [ĞŞ¸Ä]
+// [!! 
+// æ–°å¢ !!] 
+// 
+// 
+Z3Y_AUTO_REGISTER_SERVICE(z3y::example::LoggerService, "Logger.Default", true /* is_default */);
 
-        // --- ¹¹Ôìº¯Êı / Îö¹¹º¯Êı ---
+
+namespace z3y {
+    namespace example { // [ä¿®æ”¹]
+
+        // --- æ„é€ å‡½æ•° / ææ„å‡½æ•° ---
 
         LoggerService::LoggerService() {
             std::lock_guard<std::mutex> lock(mutex_);
@@ -35,11 +45,11 @@ namespace z3y {
                 << std::endl;
         }
 
-        // --- ILogger ½Ó¿ÚÊµÏÖ ---
+        // --- ILogger æ¥å£å®ç° ---
 
         /**
-         * @brief ¼ÇÂ¼Ò»ÌõÏûÏ¢ (Ïß³Ì°²È«)¡£
-         * @param[in] message Òª¼ÇÂ¼µÄ×Ö·û´®¡£
+         * @brief è®°å½•ä¸€æ¡æ¶ˆæ¯ (çº¿ç¨‹å®‰å…¨)ã€‚
+         * @param[in] message è¦è®°å½•çš„å­—ç¬¦ä¸²ã€‚
          */
         void LoggerService::Log(const std::string& message) {
             std::lock_guard<std::mutex> lock(mutex_);

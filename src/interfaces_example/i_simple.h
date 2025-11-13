@@ -1,52 +1,54 @@
 /**
  * @file i_simple.h
- * @brief ¶¨Òå z3y::example::ISimple ½Ó¿Ú¡£
- * @author ËïÅôÓî
+ * @brief å®šä¹‰ z3y::example::ISimple æ¥å£ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * [ĞŞ¸Ä]
+ * [ä¿®æ”¹]
  * 1.
- * Ê¹ÓÃ Z3Y_DEFINE_INTERFACE
- * ºê (
- * °æ±¾ 1.0)
+ * ä½¿ç”¨ Z3Y_DEFINE_INTERFACE
+ * å® (
+ * ç‰ˆæœ¬ 1.0)
  * 2.
- * Ìí¼Ó <string>
- * 3. [ĞŞ¸Ä]
- * ÒÆÈë z3y::example
- * ÃüÃû¿Õ¼ä
- */
+ * æ·»åŠ  <string>
+ * 3. [ä¿®æ”¹]
+ * ç§»å…¥ z3y::example
+ * å‘½åç©ºé—´
+ * 4. [ä¿®æ”¹] [!!]
+ * * * */
 
 #pragma once
 
 #ifndef Z3Y_INTERFACES_EXAMPLE_I_SIMPLE_H_
 #define Z3Y_INTERFACES_EXAMPLE_I_SIMPLE_H_
 
-#include "framework/i_component.h"
-#include "framework/interface_helpers.h" // [ĞÂ]
+#include "framework/z3y_plugin_sdk.h" // [!! 
+ // ä¿®æ”¹ !!] 
+ // 
 #include <string>  // [FIX]
 
 namespace z3y {
-    namespace example { // [ĞŞ¸Ä]
+    namespace example { // [ä¿®æ”¹]
 
         /**
          * @class ISimple
-         * @brief Ò»¸öÊ¾Àı¡°×é¼ş¡±½Ó¿Ú¡£
+         * @brief ä¸€ä¸ªç¤ºä¾‹â€œç»„ä»¶â€æ¥å£ã€‚
          */
         class ISimple : public virtual IComponent {
         public:
             /**
-             * @brief [ĞŞ¸Ä]
-             * Ê¹ÓÃ Z3Y_DEFINE_INTERFACE
-             * ºê (
-             * ¶¨ÒåÎª 1.0
-             * °æ±¾)
+             * @brief [ä¿®æ”¹]
+             * ä½¿ç”¨ Z3Y_DEFINE_INTERFACE
+             * å® (
+             * ç‰ˆæœ¬ 1.0
+             * ç‰ˆæœ¬)
              */
             Z3Y_DEFINE_INTERFACE(ISimple, "z3y-example-ISimple-IID-A4736128", \
                 1, 0)
 
                 /**
-                 * @brief »ñÈ¡Ò»¸öÊ¾Àı×Ö·û´®¡£
-                 * @return Ò»¸ö std::string¡£
+                 * @brief è·å–ä¸€ä¸ªç¤ºä¾‹å­—ç¬¦ä¸²ã€‚
+                 * @return ä¸€ä¸ª std::stringã€‚
                  */
                 virtual std::string GetSimpleString() = 0;
         };

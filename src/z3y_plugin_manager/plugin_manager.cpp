@@ -1,43 +1,62 @@
 /**
  * @file plugin_manager.cpp
- * @brief z3y::PluginManager ÀàµÄºËĞÄÊµÏÖ¡£
- * @author ËïÅôÓî
+ * @brief z3y::PluginManager ç±»çš„æ ¸å¿ƒå®ç°ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
  * ...
- * 10. [ĞŞ¸Ä]
- * FindComponentsImplementing
- * ÒÔËÑË÷
- * vector<InterfaceDetails>
- * 11. [FIX] [!!]
- * ĞŞÕıÁË
- * Create()
- * ºÍ RegisterComponent()
- * ÖĞ¶Ô
- * PluginCast
- * µÄÄÚ²¿µ÷ÓÃ£¬
- * ÒÔÆ¥Åä 2
- * ²ÎÊıÇ©Ãû¡£
+ * 22. [é‡æ„] [!!]
+ * æ–°å¢
+ * LoadPluginInternal
+ * çš„å¹³å°æ— å…³å®ç°
+ * 23. [FIX] [!!]
+ * LoadPluginInternal
+ * ç°åœ¨è°ƒç”¨
+ * PlatformIsPluginFile
+ * æ¥
+ * *
+ * * * *
+ * æ–‡ä»¶
  */
 
 #include "plugin_manager.h"
 #include "framework/i_plugin_query.h"
-#include <algorithm> // [ĞÂ] ÓÃÓÚ std::find_if
+#include "framework/framework_events.h" // [!! 
+ // æ–°å¢ !!]
+#include <algorithm> // [æ–°] ç”¨äº std::find_if
 #include <sstream>
 #include <stdexcept>
+#include <unordered_map> // [!! æ–°å¢ !!] ç”¨äº PluginManager::* çš„å®ç°
 
- // [ĞÂÔö] ÎªÎö¹¹º¯ÊıÖĞµÄ RAII ÇåÀí
- // ÒıÈëÆ½Ì¨ÌØ¶¨µÄ¿â
-#ifdef _WIN32
-#include <Windows.h>
-#else
-#include <dlfcn.h>
-#endif
+ // [!! 
+ // é‡æ„ !!] 
+ // 
+ // 
+ // 
+ // (
+ // 
+ // 
+ // )
+ //#ifdef _WIN32
+ //#include <Windows.h>
+ //#else
+ //#include <dlfcn.h>
+ //#endif
 
 namespace z3y {
 
+    // [!! 
+    // é‡æ„ !!] 
+    // 
+    // 
+    // 
+    // 
+    // 
+    using PluginInitFunc = void(IPluginRegistry*);
+
+
     /**
-     * @brief [¹¤³§º¯Êı] ´´½¨ PluginManager µÄÒ»¸öĞÂÊµÀı¡£
+     * @brief [å·¥å‚å‡½æ•°] åˆ›å»º PluginManager çš„ä¸€ä¸ªæ–°å®ä¾‹ã€‚
      */
     PluginPtr<PluginManager> PluginManager::Create() {
         struct MakeSharedEnabler : public PluginManager {
@@ -51,55 +70,71 @@ namespace z3y {
 
         auto factory = [weak_manager]() -> PluginPtr<IComponent> {
             if (auto strong_manager = weak_manager.lock()) {
-                // [!! 
-                // ĞŞ¸´ !!] 
                 // (
                 // 
+                // 
                 // )
-                // 
-                // 
-                // 
-                // 
                 InstanceError dummy_error;
                 return PluginCast<IComponent>(strong_manager, dummy_error);
             }
             return nullptr;
             };
 
-        // [ĞŞ¸Ä] 
-        // µ÷ÓÃ GetInterfaceDetails()
+        // [ä¿®æ”¹] 
+        // è°ƒç”¨ GetInterfaceDetails()
         auto iids = PluginManager::GetInterfaceDetails();
 
-        // 1. [ĞŞ¸Ä] ×¢²á IEventBus ·şÎñ
+        // 1. [ä¿®æ”¹] æ³¨å†Œ IEventBus æœåŠ¡
         manager->RegisterComponent(
-            clsid::kEventBus,  // Ê¹ÓÃ IEventBus µÄ·şÎñ ID
+            clsid::kEventBus,  // ä½¿ç”¨ IEventBus çš„æœåŠ¡ ID
             factory,
-            true, "z3y.core.eventbus", iids);
+            true, "z3y.core.eventbus", iids,
+            true // [!! 
+                 // ä¿®å¤ !!] 
+                 // 
+                 // 
+                 // 
+                 // 
+                 // 
+                 // 
+        );
 
-        // 2. [ĞÂÔö] ×¢²á IPluginQuery ·şÎñ
+        // 2. [æ–°å¢] æ³¨å†Œ IPluginQuery æœåŠ¡
         manager->RegisterComponent(
-            clsid::kPluginQuery,      // Ê¹ÓÃ IPluginQuery µÄ·şÎñ ID
+            clsid::kPluginQuery,      // ä½¿ç”¨ IPluginQuery çš„æœåŠ¡ ID
             factory,
-            true, "z3y.core.pluginquery", iids);
+            true, "z3y.core.pluginquery", iids,
+            false // [!! 
+                  // ä¿®å¤ !!] 
+                  // 
+                  // 
+                  // 
+                  // 
+                  // 
+        );
 
-        // 3. [¿ÉÑ¡] ×¢²á PluginManager "ÊµÏÖ" ±¾Éí
+        // 3. [å¯é€‰] æ³¨å†Œ PluginManager "å®ç°" æœ¬èº«
         manager->RegisterComponent(
-            PluginManager::kClsid,  // [ĞŞ¸Ä] 
-            // Ê¹ÓÃ kClsid
+            PluginManager::kClsid,  // [ä¿®æ”¹] 
+            // ä½¿ç”¨ kClsid
             std::move(factory),
-            true, "z3y.core.manager", iids);
+            true, "z3y.core.manager", iids,
+            false // 
+                  // 
+                  // 
+        );
 
 
-        // 4. [ĞŞÕı]£º
-        // Æô¶¯ÊÂ¼şÑ­»·¹¤×÷Ïß³Ì
+        // 4. [ä¿®æ­£]ï¼š
+        // å¯åŠ¨äº‹ä»¶å¾ªç¯å·¥ä½œçº¿ç¨‹
         manager->event_loop_thread_ =
             std::thread(&PluginManager::EventLoop, manager.get());
 
-        // 5. »ñÈ¡ IEventBus ½Ó¿Ú (ÏÖÔÚÊ¹ÓÃ×Ô¼ºµÄID)
+        // 5. è·å– IEventBus æ¥å£ (ç°åœ¨ä½¿ç”¨è‡ªå·±çš„ID)
         try {
             auto bus = manager->GetService<IEventBus>(clsid::kEventBus);
 
-            // 6. [ĞŞÕı]£ºÊ¹ÓÃÕıÈ·µÄÄ£°åÓï·¨
+            // 6. [ä¿®æ­£]ï¼šä½¿ç”¨æ­£ç¡®çš„æ¨¡æ¿è¯­æ³•
             if (bus) {
                 bus->FireGlobal<event::ComponentRegisterEvent>(
                     clsid::kEventBus, "z3y.core.eventbus", "internal.core",
@@ -118,17 +153,22 @@ namespace z3y {
     }
 
     /**
-     * @brief Ä¬ÈÏ¹¹Ôìº¯Êı£¨ÊÜ±£»¤£©¡£
+     * @brief é»˜è®¤æ„é€ å‡½æ•°ï¼ˆå—ä¿æŠ¤ï¼‰ã€‚
      */
-    PluginManager::PluginManager() : running_(true) {}
+    PluginManager::PluginManager()
+        : running_(true), current_added_components_(nullptr) {
+    } // [!! 
+     // ä¿®æ”¹ !!]
 
-    /**
-     * @brief Îö¹¹º¯Êı¡£
-     * [FIX]
-     * (ÒÑÍê³É)
-     */
+/**
+ * @brief ææ„å‡½æ•°ã€‚
+ * [!!
+ * é‡æ„ !!]
+ * (
+ * * * * )
+ */
     PluginManager::~PluginManager() {
-        // 1. Í£Ö¹¹¤×÷Ïß³Ì
+        // 1. åœæ­¢å·¥ä½œçº¿ç¨‹
         {
             std::lock_guard<std::mutex> lock(queue_mutex_);
             running_ = false;
@@ -138,62 +178,86 @@ namespace z3y {
             event_loop_thread_.join();
         }
 
-        // 2. Ğ¶ÔØËùÓĞ²å¼ş²¢Çå¿Õ×¢²á±í
-        {
-            std::scoped_lock lock(registry_mutex_, event_mutex_, queue_mutex_);
-
-            // [ĞŞÕı] 1. 
-            event_queue_ = {};
-            gc_queue_ = {};
-            sender_subscribers_.clear();
-            global_subscribers_.clear();
-            singletons_.clear();
-            components_.clear();
-            alias_map_.clear();
-            current_loading_plugin_path_.clear();
-            global_sub_lookup_.clear();
-            sender_sub_lookup_.clear();
-
-            // [ĞŞÕı] 2. 
-#ifdef _WIN32
-            for (auto it = loaded_libs_.rbegin(); it != loaded_libs_.rend();
-                ++it) {
-                ::FreeLibrary(static_cast<HMODULE>(it->second));
-            }
-#else
-            for (auto it = loaded_libs_.rbegin(); it != loaded_libs_.rend();
-                ++it) {
-                ::dlclose(it->second);
-            }
-#endif
-
-            // [ĞŞÕı] 3. 
-            loaded_libs_.clear();
-
-        }  // [Fix 2] ÊÍ·ÅËùÓĞÈı¸öËø
+        // 2. [!! 
+        //    é‡æ„ !!] 
+        //    è°ƒç”¨å…±äº«çš„æ¸…ç†å‡½æ•°
+        ClearAllRegistries();
     }
+
+    /**
+     * @brief [!!
+     * é‡æ„ !!]
+     * å…±äº«çš„æ ¸å¿ƒæ¸…ç†å‡½æ•°
+     * (
+     * å¹³å°æ— å…³
+     * )
+     */
+    void PluginManager::ClearAllRegistries()
+    {
+        // 
+        // 
+        // 
+        // 
+        // 
+        std::scoped_lock lock(registry_mutex_, event_mutex_, queue_mutex_);
+
+        // [ä¿®æ­£] 1. 
+        event_queue_ = {};
+        gc_queue_ = {};
+        sender_subscribers_.clear();
+        global_subscribers_.clear();
+        global_sub_lookup_.clear();
+        sender_sub_lookup_.clear();
+
+        // [ä¿®æ­£] 2. 
+        // Note: singletons_, components_, alias_map_, default_map_ are now unordered_map.
+        singletons_.clear();
+        components_.clear();
+        alias_map_.clear();
+        default_map_.clear();
+        loaded_libs_.clear(); // loaded_libs_ is now unordered_map
+        current_loading_plugin_path_.clear();
+        current_added_components_ = nullptr;
+
+        // [ä¿®æ­£] 3. [!! 
+        //    é‡æ„ !!] 
+        //    è°ƒç”¨å¹³å°ç›¸å…³çš„å¸è½½
+        PlatformSpecificLibraryUnload();
+        // (
+        // 
+        // 
+        // 
+        // 
+        // )
+    }
+
 
     /**
      * @brief [FIX]
      * Shutdown()
-     * ÒÑ±»ÒÆ³ı¡£
-     * (ÒÑÍê³É)
+     * å·²è¢«ç§»é™¤ã€‚
+     * (å·²å®Œæˆ)
      */
      // void PluginManager::Shutdown() { ... }
 
      /**
-      * @brief [IPluginRegistry ½Ó¿ÚÊµÏÖ] ×¢²áÒ»¸ö×é¼şÀà¡£
-      * [ĞŞ¸Ä]
-      * ¸üĞÂÇ©ÃûÎª
-      * vector<InterfaceDetails>
+      * @brief [IPluginRegistry æ¥å£å®ç°] æ³¨å†Œä¸€ä¸ªç»„ä»¶ç±»ã€‚
+      * [ä¿®æ”¹]
+      * å®ç°äº† is_default
+      * å†²çªæ£€æµ‹å’Œ
+      * * * äº‹åŠ¡æ€§è¿½è¸ª
+      * *
       */
     void PluginManager::RegisterComponent(
         ClassId clsid, FactoryFunction factory, bool is_singleton,
         const std::string& alias,
-        std::vector<InterfaceDetails> implemented_interfaces) // [ĞŞ¸Ä]
+        std::vector<InterfaceDetails> implemented_interfaces, // [ä¿®æ”¹]
+        bool is_default) // [!! 
+        // æ–°å¢ !!]
     {
         PluginPtr<IEventBus> bus;
         {
+            // Note: components_ is now unordered_map.
             std::lock_guard<std::mutex> lock(registry_mutex_);
 
             if (components_.count(clsid)) {
@@ -207,26 +271,77 @@ namespace z3y {
                 throw std::runtime_error(error_msg);
             }
 
-            // [ĞŞ¸Ä]
-            // ´æ´¢ËùÓĞĞÅÏ¢
+            // [!! 
+            // æ–°å¢ !!] 
+            // 
+            // 
+            // 
+            if (is_default) {
+                for (const auto& iface : implemented_interfaces) {
+                    // 
+                    // 
+                    // 
+                    // 
+                    if (iface.iid == IComponent::kIid) {
+                        continue;
+                    }
+                    // Note: default_map_ is now unordered_map.
+                    auto it = default_map_.find(iface.iid);
+                    if (it != default_map_.end()) {
+                        // 
+                        // 
+                        // 
+                        std::stringstream ss_old, ss_new;
+                        ss_old << std::hex << it->second;
+                        ss_new << std::hex << clsid;
+
+                        throw std::runtime_error(
+                            "Default implementation conflict: Interface '" + iface.name +
+                            "' (IID 0x" + std::to_string(iface.iid) +
+                            ") already has a default (CLSID: 0x" + ss_old.str() +
+                            "). Cannot register new default (CLSID: 0x" + ss_new.str() + ")."
+                        );
+                    }
+                    // 
+                    // 
+                    default_map_[iface.iid] = clsid;
+                }
+            }
+
+
+            // [ä¿®æ”¹]
+            // å­˜å‚¨æ‰€æœ‰ä¿¡æ¯
             components_[clsid] = {
                 std::move(factory),
                 is_singleton,
                 alias,
                 current_loading_plugin_path_,
-                std::move(implemented_interfaces)  // [ĞŞ¸Ä]
+                std::move(implemented_interfaces),  // [ä¿®æ”¹]
+                is_default // [!! 
+                           // æ–°å¢ !!] 
+                           // 
+                           // 
+                           // 
             };
 
+            // [!! 
+            // æ–°å¢ !!] 
+            // 
+            // 
+            // 
+            if (current_added_components_) {
+                current_added_components_->push_back(clsid);
+            }
+            // Note: alias_map_ is now unordered_map.
             if (!alias.empty()) {
                 alias_map_[alias] = clsid;
             }
 
-            // [FIX] [ĞŞ¸Ä]
-            // (ÒÑÍê³É)
+            // [FIX] [ä¿®æ”¹]
+            // (å·²å®Œæˆ)
             if (running_) {
-                // [!! 
-                // ĞŞ¸´ !!] 
                 // (
+                // 
                 // 
                 // )
                 InstanceError dummy_error;
@@ -234,7 +349,7 @@ namespace z3y {
             }
         }
 
-        // ÔÚËøÊÍ·Åºó´¥·¢ÊÂ¼ş
+        // åœ¨é”é‡Šæ”¾åè§¦å‘äº‹ä»¶
         if (bus) {
             bus->FireGlobal<event::ComponentRegisterEvent>(
                 clsid, alias, current_loading_plugin_path_, is_singleton);
@@ -242,9 +357,73 @@ namespace z3y {
     }
 
     /**
-     * @brief [ÄÚ²¿] Í¨¹ı±ğÃû²éÕÒ ClassId¡£
+     * @brief [!!
+     * æ–°å¢ !!]
+     * äº‹åŠ¡æ€§å›æ»š
+     * (
+     * åœ¨åŠ è½½å¤±è´¥æ—¶è°ƒç”¨
+     * )
+     */
+    void PluginManager::RollbackRegistrations(const std::vector<ClassId>& clsid_list)
+    {
+        // Note: components_, alias_map_, default_map_, singletons_ are now unordered_map.
+        std::lock_guard<std::mutex> lock(registry_mutex_);
+
+        for (const ClassId clsid : clsid_list)
+        {
+            auto it = components_.find(clsid);
+            if (it == components_.end()) {
+                continue;
+            }
+
+            const ComponentInfo& info = it->second;
+
+            // 1. 
+            // 
+            // 
+            if (!info.alias.empty()) {
+                alias_map_.erase(info.alias);
+            }
+
+            // 2. 
+            // 
+            // 
+            // [!! 
+            // ä¿®æ”¹ !!] (
+            // 
+            // 
+            // )
+            if (info.is_default_registration) {
+                for (const auto& iface : info.implemented_interfaces) {
+                    auto default_it = default_map_.find(iface.iid);
+                    if (default_it != default_map_.end() && default_it->second == clsid) {
+                        default_map_.erase(default_it);
+                    }
+                }
+            }
+
+            // 3. 
+            // 
+            // 
+            // (
+            // 
+            // 
+            // )
+            singletons_.erase(clsid);
+
+            // 4. 
+            // 
+            // 
+            components_.erase(it);
+        }
+    }
+
+
+    /**
+     * @brief [å†…éƒ¨] é€šè¿‡åˆ«åæŸ¥æ‰¾ ClassIdã€‚
      */
     ClassId PluginManager::GetClsidFromAlias(const std::string& alias) {
+        // Note: alias_map_ is now unordered_map.
         std::lock_guard<std::mutex> lock(registry_mutex_);
         auto it = alias_map_.find(alias);
         if (it != alias_map_.end()) {
@@ -253,9 +432,153 @@ namespace z3y {
         return 0;
     }
 
-    // --- [ĞŞ¸Ä] IPluginQuery ½Ó¿ÚÊµÏÖ ---
+
+    /**
+     * @brief [!!
+     * é‡æ„ !!]
+     * å¹³å°æ— å…³çš„æ ¸å¿ƒåŠ è½½é€»è¾‘
+     * (
+     * åŸ platform_*.cpp
+     * ä¸­çš„
+     * LoadPluginInternal
+     * )
+     */
+    bool PluginManager::LoadPluginInternal(
+        const std::filesystem::path& file_path,
+        const std::string& init_func_name) {
+
+        // 1. [!! 
+        //    FIX !!] 
+        //    
+        // 
+        // 
+        // 
+        if (!PlatformIsPluginFile(file_path)) {
+            return false; // 
+            // 
+            // 
+        }
+
+        PluginPtr<IEventBus> bus;
+        try {
+            bus = GetService<IEventBus>(clsid::kEventBus);
+        }
+        catch (const PluginException&) {
+            /* åœ¨åŠ è½½æ—©æœŸé˜¶æ®µ bus
+            å¯èƒ½ä¸å­˜åœ¨ï¼Œ
+            å¿½ç•¥
+            */
+        }
+
+        std::string path_str = file_path.string();
+
+        // 2. [!! 
+        //    é‡æ„ !!] 
+        //    è°ƒç”¨å¹³å°æŠ½è±¡
+        LibHandle lib_handle = PlatformLoadLibrary(file_path);
+        if (!lib_handle) {
+            if (bus) {
+                bus->FireGlobal<event::PluginLoadFailureEvent>(
+                    path_str, "LoadLibrary failed: " + PlatformGetError());
+            }
+            return false;
+        }
+
+        // 3. [!! 
+        //    é‡æ„ !!] 
+        //    è°ƒç”¨å¹³å°æŠ½è±¡
+        PluginInitFunc* init_func = reinterpret_cast<PluginInitFunc*>(
+            PlatformGetFunction(lib_handle, init_func_name.c_str()));
+
+        if (!init_func) {
+            if (bus) {
+                bus->FireGlobal<event::PluginLoadFailureEvent>(
+                    path_str,
+                    "GetProcAddress failed (z3yPluginInit not found): " + PlatformGetError());
+            }
+            PlatformUnloadLibrary(lib_handle);
+            return false;
+        }
+
+        // 
+        // 
+        // 
+        // 
+        // 
+        std::vector<ClassId> added_components_this_session;
+
+        // 4. 
+        // 
+        // 
+        // (
+        // 
+        // 
+        // )
+        try {
+            {
+                // Note: loaded_libs_ is now unordered_map.
+                std::lock_guard<std::mutex> lock(registry_mutex_);
+                current_loading_plugin_path_ = path_str;
+                current_added_components_ = &added_components_this_session;
+            }
+
+            init_func(this);  // <-- æ’ä»¶åœ¨æ­¤å¤„è°ƒç”¨ RegisterComponent
+
+            // åŠ è½½æˆåŠŸ
+            {
+                std::lock_guard<std::mutex> lock(registry_mutex_);
+                current_loading_plugin_path_ = "";
+                current_added_components_ = nullptr;
+                loaded_libs_[path_str] = lib_handle;
+            }
+
+            if (bus) {
+                bus->FireGlobal<event::PluginLoadSuccessEvent>(path_str);
+            }
+
+            return true;
+        }
+        catch (const std::exception& e) {
+            // init_func æŠ›å‡ºå¼‚å¸¸
+            {
+                std::lock_guard<std::mutex> lock(registry_mutex_);
+                current_loading_plugin_path_ = "";
+                current_added_components_ = nullptr;
+            }
+
+            RollbackRegistrations(added_components_this_session);
+
+            if (bus) {
+                bus->FireGlobal<event::PluginLoadFailureEvent>(path_str,
+                    e.what());
+            }
+            PlatformUnloadLibrary(lib_handle);
+            return false;
+        }
+        catch (...) {
+            // init_func æŠ›å‡ºæœªçŸ¥å¼‚å¸¸
+            {
+                std::lock_guard<std::mutex> lock(registry_mutex_);
+                current_loading_plugin_path_ = "";
+                current_added_components_ = nullptr;
+            }
+
+            RollbackRegistrations(added_components_this_session);
+
+            if (bus) {
+                bus->FireGlobal<event::PluginLoadFailureEvent>(
+                    path_str, "Unknown exception during init.");
+            }
+            PlatformUnloadLibrary(lib_handle);
+            return false;
+        }
+    }
+
+
+    // --- [ä¿®æ”¹] IPluginQuery æ¥å£å®ç° ---
 
     std::vector<ComponentDetails> PluginManager::GetAllComponents() {
+        // Note: components_ is now unordered_map.
         std::lock_guard<std::mutex> lock(registry_mutex_);
         std::vector<ComponentDetails> details_list;
         details_list.reserve(components_.size());
@@ -264,8 +587,9 @@ namespace z3y {
             details_list.push_back(ComponentDetails{
                 pair.first, pair.second.alias, pair.second.is_singleton,
                 pair.second.source_plugin_path,
-                pair.second.implemented_interfaces // [ĞŞ¸Ä] 
-                // Ö±½Ó¸´ÖÆ
+                pair.second.is_default_registration, // [!! 
+                // æ–°å¢ !!]
+pair.second.implemented_interfaces
                 });
         }
         return details_list;
@@ -273,6 +597,7 @@ namespace z3y {
 
     bool PluginManager::GetComponentDetails(ClassId clsid,
         ComponentDetails& out_details) {
+        // Note: components_ is now unordered_map.
         std::lock_guard<std::mutex> lock(registry_mutex_);
         auto it = components_.find(clsid);
         if (it == components_.end()) {
@@ -282,16 +607,17 @@ namespace z3y {
         out_details = ComponentDetails{ it->first, it->second.alias,
                                        it->second.is_singleton,
                                        it->second.source_plugin_path,
-                                       it->second.implemented_interfaces // [ĞŞ¸Ä]
-            // Ö±½Ó¸´ÖÆ
+                                       it->second.is_default_registration, // [!! 
+            // æ–°å¢ !!]
+it->second.implemented_interfaces
         };
         return true;
     }
 
     /**
      * @brief [IPluginQuery
-     * ½Ó¿ÚÊµÏÖ]
-     * (ÒÑÍê³É)
+     * æ¥å£å®ç°]
+     * (å·²å®Œæˆ)
      */
     bool PluginManager::GetComponentDetailsByAlias(
         const std::string& alias,
@@ -306,17 +632,18 @@ namespace z3y {
 
     std::vector<ComponentDetails> PluginManager::FindComponentsImplementing(
         InterfaceId iid) {
+        // Note: components_ is now unordered_map.
         std::lock_guard<std::mutex> lock(registry_mutex_);
         std::vector<ComponentDetails> details_list;
 
         for (const auto& pair : components_) {
-            // [ĞŞ¸Ä] 
-            // ËÑË÷ vector<InterfaceDetails>
+            // [ä¿®æ”¹] 
+            // æœç´¢ vector<InterfaceDetails>
             const auto& iids = pair.second.implemented_interfaces;
 
-            // Ê¹ÓÃ C++11 lambda 
-            // »ò C++20 
-            // Í¶Ó° (projection)
+            // ä½¿ç”¨ C++11 lambda 
+            // æˆ– C++20 
+            // æŠ•å½± (projection)
             auto it = std::find_if(iids.begin(), iids.end(),
                 [iid](const InterfaceDetails& d) {
                     return d.iid == iid;
@@ -325,13 +652,17 @@ namespace z3y {
             if (it != iids.end()) {
                 details_list.push_back(ComponentDetails{
                     pair.first, pair.second.alias, pair.second.is_singleton,
-                    pair.second.source_plugin_path, iids });
+                    pair.second.source_plugin_path,
+                    pair.second.is_default_registration, // [!! 
+                    // æ–°å¢ !!]
+iids });
             }
         }
         return details_list;
     }
 
     std::vector<std::string> PluginManager::GetLoadedPluginFiles() {
+        // Note: loaded_libs_ is now unordered_map.
         std::lock_guard<std::mutex> lock(registry_mutex_);
         std::vector<std::string> paths;
         paths.reserve(loaded_libs_.size());
@@ -343,6 +674,7 @@ namespace z3y {
 
     std::vector<ComponentDetails> PluginManager::GetComponentsFromPlugin(
         const std::string& plugin_path) {
+        // Note: components_ is now unordered_map.
         std::lock_guard<std::mutex> lock(registry_mutex_);
         std::vector<ComponentDetails> details_list;
 
@@ -351,8 +683,9 @@ namespace z3y {
                 details_list.push_back(ComponentDetails{
                     pair.first, pair.second.alias, pair.second.is_singleton,
                     pair.second.source_plugin_path,
-                    pair.second.implemented_interfaces // [ĞŞ¸Ä]
-                    // Ö±½Ó¸´ÖÆ
+                    pair.second.is_default_registration, // [!! 
+                    // æ–°å¢ !!]
+pair.second.implemented_interfaces
                     });
             }
         }

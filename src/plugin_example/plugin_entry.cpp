@@ -1,59 +1,31 @@
 /**
  * @file plugin_entry.cpp
- * @brief plugin_example ²å¼şµÄÈë¿ÚµãÎÄ¼ş¡£
- * @author ËïÅôÓî
+ * @brief plugin_example æ’ä»¶çš„å…¥å£ç‚¹æ–‡ä»¶ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * [ĞŞ¸Ä]
- * 1. [ĞŞ¸Ä]
- * ¸üĞÂ×¢²áµÄÀàÒÔÊ¹ÓÃ
+ * [ä¿®æ”¹]
+ * 1. [ä¿®æ”¹]
+ * æ›´æ–°æ³¨å†Œçš„ç±»ä»¥ä½¿ç”¨
  * z3y::example
- * ÃüÃû¿Õ¼ä
+ * å‘½åç©ºé—´
+ * 2. [ä¿®æ”¹] [!!]
+ * ç§»é™¤æ‰€æœ‰ç»„ä»¶
+ * include
+ * å’Œç¡¬ç¼–ç æ³¨å†Œï¼Œ
+ * æ”¹ä¸ºæ‰§è¡Œè‡ªåŠ¨æ³¨å†Œåˆ—è¡¨ã€‚
+ * 3. [ä¿®æ”¹] [!!]
+ * æ–‡ä»¶å†…å®¹è¢«ç®€åŒ–ä¸ºè°ƒç”¨ Z3Y_DEFINE_PLUGIN_ENTRY
+ * å®ã€‚
  */
 
- // °üº¬ÎÒÃÇÔÚ´Ë²å¼şÖĞÊµÏÖµÄËùÓĞ×é¼şµÄÍ·ÎÄ¼ş
-#include "simple_impl_a.h"
-#include "simple_impl_b.h"
-#include "logger_service.h"
+ // 
+ // 
+ // 
+#include "framework/z3y_plugin_sdk.h"
 
-// °üº¬¿ò¼ÜµÄ×¢²á½Ó¿ÚºÍ¸¨Öú¹¤¾ß
-#include "framework/i_plugin_registry.h"
-#include "framework/plugin_registration.h" 
-
-// --- ¶¨Òå DLL µ¼³öºê ---
-#ifdef _WIN32
-#define PLUGIN_API __declspec(dllexport)
-#else
-#define PLUGIN_API __attribute__((visibility("default")))
-#endif
-
-/**
- * @brief ²å¼şµÄÎ¨Ò»Èë¿Úµãº¯Êı¡£
- *
- * @param[in] registry ËŞÖ÷ PluginManager ´«ÈëµÄ×¢²á±í½Ó¿ÚÖ¸Õë¡£
- */
-extern "C" PLUGIN_API void z3yPluginInit(z3y::IPluginRegistry* registry)
-{
-    if (!registry)
-    {
-        return;
-    }
-
-    // --- ×¢²á SimpleImplA (ÆÕÍ¨×é¼ş) ---
-    // [ĞŞ¸Ä] 
-    // Ê¹ÓÃ z3y::example 
-    // ÃüÃû¿Õ¼ä
-    z3y::RegisterComponent<z3y::example::SimpleImplA>(registry, "Simple.A");
-
-    // --- ×¢²á SimpleImplB (ÆÕÍ¨×é¼ş) ---
-    // [ĞŞ¸Ä] 
-    // Ê¹ÓÃ z3y::example 
-    // ÃüÃû¿Õ¼ä
-    z3y::RegisterComponent<z3y::example::SimpleImplB>(registry, "Simple.B");
-
-    // --- ×¢²á LoggerService (µ¥Àı·şÎñ) ---
-    // [ĞŞ¸Ä] 
-    // Ê¹ÓÃ z3y::example 
-    // ÃüÃû¿Õ¼ä
-    z3y::RegisterService<z3y::example::LoggerService>(registry, "Logger.Default");
-}
+// [!! 
+// æ ¸å¿ƒé€»è¾‘ !!] 
+// 
+// 
+Z3Y_DEFINE_PLUGIN_ENTRY

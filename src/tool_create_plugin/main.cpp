@@ -1,23 +1,25 @@
 /**
  * @file main.cpp
- * @brief ²å¼ş½ÅÊÖ¼Ü (Scaffolding) ¹¤¾ßµÄÖ÷³ÌĞò¡£
- * @author ËïÅôÓî
+ * @brief æ’ä»¶è„šæ‰‹æ¶ (Scaffolding) å·¥å…·çš„ä¸»ç¨‹åºã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * [ÒÑĞŞÕı]£º
+ * [å·²ä¿®æ­£]ï¼š
  * 1. ...
- * 2. [ĞŞ¸Ä]
- * ¸üĞÂÁîÅÆ (Token)
- * Éú³ÉÂß¼­ÒÔÊÊÓ¦ĞÂµÄºêºÍÃüÃû¿Õ¼äÉè¼Æ¡£
- * 3. [ĞŞ¸Ä]
- * ÏÖÔÚÉú³ÉÁ½¸ö UUID (
- * ½Ó¿ÚÒ»¸ö£¬
- * ÊµÏÖÒ»¸ö
- * )¡£
- * 4. [ĞŞ¸Ä]
- * ÒÆ³ıÁËÒÑ·ÏÆúµÄ IMPL_CONST_NAME
+ * 2. [ä¿®æ”¹]
+ * æ›´æ–°ä»¤ç‰Œ (Token)
+ * ç”Ÿæˆé€»è¾‘ä»¥é€‚åº”æ–°çš„å®å’Œå‘½åç©ºé—´è®¾è®¡ã€‚
+ * 3. [ä¿®æ”¹]
+ * ç°åœ¨ç”Ÿæˆä¸¤ä¸ª UUID (
+ * æ¥å£ä¸€ä¸ªï¼Œ
+ * å®ç°ä¸€ä¸ª
+ * )ã€‚
+ * 4. [ä¿®æ”¹]
+ * ç§»é™¤äº†å·²åºŸå¼ƒçš„ IMPL_CONST_NAME
  * (kCMyClassName)
- * ÁîÅÆ¡£
+ * ä»¤ç‰Œã€‚
+ * 5. [é‡æ„] [!!]
+ * æ‰€æœ‰è¾…åŠ©å‡½æ•°å·²ç§»å…¥åŒ¿åå‘½åç©ºé—´ã€‚
  */
 
 #include "uuid_gen.h"
@@ -28,166 +30,175 @@
 #include <string>
 #include <map>
 #include <filesystem>
-#include <algorithm> // ÓÃÓÚ std::transform
-#include <cctype>    // ÓÃÓÚ ::tolower, ::toupper
-#include <ctime>     // ÓÃÓÚ std::time_t, std::tm, std::strftime
+#include <algorithm> // ç”¨äº std::transform
+#include <cctype>    // ç”¨äº ::tolower, ::toupper
+#include <ctime>     // ç”¨äº std::time_t, std::tm, std::strftime
 
- // ¸¨Öúº¯Êı£º½«×Ö·û´®×ªÎªÈ«Ğ¡Ğ´
- // (º¯Êı: PascalCase)
-std::string ToLower(std::string s)
-{
-    std::transform(s.begin(), s.end(), s.begin(),
-        [](unsigned char c) { return std::tolower(c); });
-    return s;
-}
 
-// [ÒÑ·ÏÆú]
-// ¸¨Öúº¯Êı£º½« "MyClassName" ×ª»»Îª "kCMyClassName"
-// (º¯Êı: PascalCase)
-// std::string ToKName(std::string s)
-// {
-//     ...
-// }
+namespace { // [!! 
+    // é‡æ„ !!] 
+    // 
+    // 
 
-// ¸¨Öúº¯Êı£º½« "IMyInterface" ×ª»»Îª "i_my_interface.h"
-// (º¯Êı: PascalCase)
-std::string ToInterfaceFilename(std::string s)
-{
-    if (s.empty() || (s[0] != 'I' && s[0] != 'i'))
+// è¾…åŠ©å‡½æ•°ï¼šå°†å­—ç¬¦ä¸²è½¬ä¸ºå…¨å°å†™
+// (å‡½æ•°: PascalCase)
+    std::string ToLower(std::string s)
     {
-        return "i_unknown.h";
+        std::transform(s.begin(), s.end(), s.begin(),
+            [](unsigned char c) { return std::tolower(c); });
+        return s;
     }
-    // ½« "IMyInterface" ±äÎª "myInterface"
-    s.erase(0, 1);
-    s[0] = std::tolower(s[0]);
 
-    std::string result = "i_";
-    for (char c : s)
+    // [å·²åºŸå¼ƒ]
+    // è¾…åŠ©å‡½æ•°ï¼šå°† "MyClassName" è½¬æ¢ä¸º "kCMyClassName"
+    // (å‡½æ•°: PascalCase)
+    // std::string ToKName(std::string s)
+    // {
+    //     ...
+    // }
+
+    // è¾…åŠ©å‡½æ•°ï¼šå°† "IMyInterface" è½¬æ¢ä¸º "i_my_interface.h"
+    // (å‡½æ•°: PascalCase)
+    std::string ToInterfaceFilename(std::string s)
     {
-        if (std::isupper(c))
+        if (s.empty() || (s[0] != 'I' && s[0] != 'i'))
         {
-            result += '_';
-            result += std::tolower(c);
+            return "i_unknown.h";
         }
-        else
-        {
-            result += c;
-        }
-    }
-    return result + ".h";
-}
+        // å°† "IMyInterface" å˜ä¸º "myInterface"
+        s.erase(0, 1);
+        s[0] = std::tolower(s[0]);
 
-// ¸¨Öúº¯Êı£º½« "MyComponentImpl" ×ª»»Îª "my_component_impl"
-// (º¯Êı: PascalCase)
-std::string ToImplFilenameBase(std::string s)
-{
-    if (s.empty())
+        std::string result = "i_";
+        for (char c : s)
+        {
+            if (std::isupper(c))
+            {
+                result += '_';
+                result += std::tolower(c);
+            }
+            else
+            {
+                result += c;
+            }
+        }
+        return result + ".h";
+    }
+
+    // è¾…åŠ©å‡½æ•°ï¼šå°† "MyComponentImpl" è½¬æ¢ä¸º "my_component_impl"
+    // (å‡½æ•°: PascalCase)
+    std::string ToImplFilenameBase(std::string s)
     {
-        return "component_impl";
+        if (s.empty())
+        {
+            return "component_impl";
+        }
+        s[0] = std::tolower(s[0]);
+        std::string result;
+        for (char c : s)
+        {
+            if (std::isupper(c))
+            {
+                result += '_';
+                result += std::tolower(c);
+            }
+            else
+            {
+                result += c;
+            }
+        }
+        return result;
     }
-    s[0] = std::tolower(s[0]);
-    std::string result;
-    for (char c : s)
+
+    // è¾…åŠ©å‡½æ•°ï¼šç”Ÿæˆå¤´æ–‡ä»¶å«å“¨
+    // (å‡½æ•°: PascalCase)
+    std::string ToIncludeGuard(const std::string& prefix, const std::string& filename)
     {
-        if (std::isupper(c))
-        {
-            result += '_';
-            result += std::tolower(c);
-        }
-        else
-        {
-            result += c;
-        }
+        std::string guard = prefix + "_" + filename;
+        std::transform(guard.begin(), guard.end(), guard.begin(),
+            [](unsigned char c)
+            {
+                return (std::isalnum(c) ? std::toupper(c) : '_');
+            });
+        return guard + "_";
     }
-    return result;
-}
 
-// ¸¨Öúº¯Êı£ºÉú³ÉÍ·ÎÄ¼şÎÀÉÚ
-// (º¯Êı: PascalCase)
-std::string ToIncludeGuard(const std::string& prefix, const std::string& filename)
-{
-    std::string guard = prefix + "_" + filename;
-    std::transform(guard.begin(), guard.end(), guard.begin(),
-        [](unsigned char c)
-        {
-            return (std::isalnum(c) ? std::toupper(c) : '_');
-        });
-    return guard + "_";
-}
+    // è¾…åŠ©å‡½æ•°ï¼šè·å–å½“å‰æ—¥æœŸ (è·¨å¹³å°çº¿ç¨‹å®‰å…¨)
+    // (å‡½æ•°: PascalCase)
+    std::string GetCurrentDate()
+    {
+        std::time_t t = std::time(nullptr);
+        std::tm tm_struct = {}; // é›¶åˆå§‹åŒ–
 
-// ¸¨Öúº¯Êı£º»ñÈ¡µ±Ç°ÈÕÆÚ (¿çÆ½Ì¨Ïß³Ì°²È«)
-// (º¯Êı: PascalCase)
-std::string GetCurrentDate()
-{
-    std::time_t t = std::time(nullptr);
-    std::tm tm_struct = {}; // Áã³õÊ¼»¯
-
-    // [ĞŞÕı]£º
-    // Ê¹ÓÃÆ½Ì¨ÌØ¶¨µÄÏß³Ì°²È«º¯Êı
+        // [ä¿®æ­£]ï¼š
+        // ä½¿ç”¨å¹³å°ç‰¹å®šçš„çº¿ç¨‹å®‰å…¨å‡½æ•°
 #ifdef _WIN32
-    // Ê¹ÓÃ Microsoft µÄ "safe" °æ±¾
-    localtime_s(&tm_struct, &t);
+    // ä½¿ç”¨ Microsoft çš„ "safe" ç‰ˆæœ¬
+        localtime_s(&tm_struct, &t);
 #else
-    // Ê¹ÓÃ POSIX (Linux, macOS) µÄ "thread-safe" °æ±¾
-    localtime_r(&t, &tm_struct);
+    // ä½¿ç”¨ POSIX (Linux, macOS) çš„ "thread-safe" ç‰ˆæœ¬
+        localtime_r(&t, &tm_struct);
 #endif
 
-    char mbstr[100];
-    if (std::strftime(mbstr, sizeof(mbstr), "%Y-%m-%d", &tm_struct))
-    {
-        return mbstr;
-    }
-    return "2025-01-01";
-}
-
-// ¸¨Öúº¯Êı£ºÖ´ĞĞ×Ö·û´®Ìæ»»
-// (º¯Êı: PascalCase)
-std::string ReplaceTokens(std::string text,
-    const std::map<std::string, std::string>& tokens)
-{
-    for (const auto& [token, value] : tokens)
-    {
-        std::string token_tag = "$$" + token + "$$";
-        size_t pos = text.find(token_tag);
-        while (pos != std::string::npos)
+        char mbstr[100];
+        if (std::strftime(mbstr, sizeof(mbstr), "%Y-%m-%d", &tm_struct))
         {
-            text.replace(pos, token_tag.length(), value);
-            pos = text.find(token_tag, pos + value.length());
+            return mbstr;
         }
+        return "2025-01-01";
     }
-    return text;
-}
+
+    // è¾…åŠ©å‡½æ•°ï¼šæ‰§è¡Œå­—ç¬¦ä¸²æ›¿æ¢
+    // (å‡½æ•°: PascalCase)
+    std::string ReplaceTokens(std::string text,
+        const std::map<std::string, std::string>& tokens)
+    {
+        for (const auto& [token, value] : tokens)
+        {
+            std::string token_tag = "$$" + token + "$$";
+            size_t pos = text.find(token_tag);
+            while (pos != std::string::npos)
+            {
+                text.replace(pos, token_tag.length(), value);
+                pos = text.find(token_tag, pos + value.length());
+            }
+        }
+        return text;
+    }
+
+    /**
+     * @brief å†™å…¥æ–‡ä»¶ï¼ˆå¦‚æœä¸å­˜åœ¨ï¼‰
+     * (å‡½æ•°: PascalCase)
+     */
+    void WriteFile(const std::filesystem::path& path, const std::string& content)
+    {
+        if (std::filesystem::exists(path))
+        {
+            std::cout << "[Skipped] File already exists: " << path.string() << std::endl;
+            return;
+        }
+
+        std::ofstream file(path);
+        if (!file.is_open())
+        {
+            std::cerr << "[Error] Failed to open file for writing: " << path.string() << std::endl;
+            return;
+        }
+
+        file << content;
+        file.close();
+        std::cout << "[Created] File: " << path.string() << std::endl;
+    }
+
+} // åŒ¿åå‘½åç©ºé—´ [!! 
+  // é‡æ„ !!]
 
 /**
- * @brief Ğ´ÈëÎÄ¼ş£¨Èç¹û²»´æÔÚ£©
- * (º¯Êı: PascalCase)
- */
-void WriteFile(const std::filesystem::path& path, const std::string& content)
-{
-    if (std::filesystem::exists(path))
-    {
-        std::cout << "[Skipped] File already exists: " << path.string() << std::endl;
-        return;
-    }
-
-    std::ofstream file(path);
-    if (!file.is_open())
-    {
-        std::cerr << "[Error] Failed to open file for writing: " << path.string() << std::endl;
-        return;
-    }
-
-    file << content;
-    file.close();
-    std::cout << "[Created] File: " << path.string() << std::endl;
-}
-
-/**
- * @brief Ö÷º¯Êı
+ * @brief ä¸»å‡½æ•°
  */
 int main(int argc, char* argv[])
 {
-    // 1. ½âÎöÃüÁîĞĞ²ÎÊı (¼òÒ×)
+    // 1. è§£æå‘½ä»¤è¡Œå‚æ•° (ç®€æ˜“)
     std::map<std::string, std::string> args;
     for (int i = 1; i < argc; ++i)
     {
@@ -201,15 +212,15 @@ int main(int argc, char* argv[])
     if (args.find("name") == args.end() ||
         args.find("interface") == args.end() ||
         args.find("plugin") == args.end() ||
-        args.find("interface_path") == args.end() // [ĞŞ¸Ä] 
-        // Ç¿ÖÆÒªÇó
+        args.find("interface_path") == args.end() // [ä¿®æ”¹] 
+        // å¼ºåˆ¶è¦æ±‚
         )
     {
         std::cerr << "Usage: tool_create_plugin.exe "
             << "--name <ImplClassName> "
             << "--interface <IInterfaceName> "
             << "--plugin <plugin_name> "
-            << "--interface_path <interface_dir_name>" // [ĞŞ¸Ä]
+            << "--interface_path <interface_dir_name>" // [ä¿®æ”¹]
             << std::endl;
         std::cerr << "Example: tool_create_plugin.exe "
             << "--name SimpleImplA "
@@ -223,20 +234,20 @@ int main(int argc, char* argv[])
     std::string impl_class_name = args["name"];
     std::string interface_name = args["interface"];
     std::string plugin_name = args["plugin"];
-    std::string interface_path = args["interface_path"]; // [ĞŞ¸Ä]
+    std::string interface_path = args["interface_path"]; // [ä¿®æ”¹]
     std::string alias = impl_class_name; // 
-    // [±£Áô] 
-    // ±ğÃûÈÔÓÉ plugin_entry.cpp 
-    // ¶¨Òå
+    // [ä¿ç•™] 
+    // åˆ«åä»ç”± plugin_entry.cpp 
+    // å®šä¹‰
 
-// 2. ÍÆµ¼ËùÓĞĞèÒªµÄÃû³Æ
-// [ĞŞ¸Ä] 
-// ÎªÃüÃû¿Õ¼äÌí¼ÓÁîÅÆ
+// 2. æ¨å¯¼æ‰€æœ‰éœ€è¦çš„åç§°
+// [ä¿®æ”¹] 
+// ä¸ºå‘½åç©ºé—´æ·»åŠ ä»¤ç‰Œ
     std::string interface_namespace = interface_path;
     std::string plugin_namespace = plugin_name;
 
-    // [ĞŞ¸Ä] 
-    // ÒÆ³ıÒÑ·ÏÆúµÄ impl_const_name
+    // [ä¿®æ”¹] 
+    // ç§»é™¤å·²åºŸå¼ƒçš„ impl_const_name
     // std::string impl_const_name = ToKName(impl_class_name);
 
     std::string interface_filename = ToInterfaceFilename(interface_name);
@@ -245,46 +256,46 @@ int main(int argc, char* argv[])
     std::string impl_filename_cpp = impl_filename_base + ".cpp";
     std::string plugin_guard_prefix = "Z3Y_SRC_" + ToLower(plugin_name);
 
-    // [ĞŞ¸Ä] 
+    // [ä¿®æ”¹] 
     // 
     // 
     std::string iface_guard_prefix = "Z3Y_SRC_" + ToLower(interface_path);
 
     std::map<std::string, std::string> tokens = {
         {"INTERFACE_NAME", interface_name},
-        {"INTERFACE_NAMESPACE", interface_namespace}, // [ĞÂ]
+        {"INTERFACE_NAMESPACE", interface_namespace}, // [æ–°]
         {"INTERFACE_FILENAME", interface_filename},
         {"INTERFACE_PATH", interface_path},
-        {"INTERFACE_INCLUDE_GUARD", ToIncludeGuard(iface_guard_prefix, interface_filename)}, // [ĞŞ¸Ä]
+        {"INTERFACE_INCLUDE_GUARD", ToIncludeGuard(iface_guard_prefix, interface_filename)}, // [ä¿®æ”¹]
         {"IMPL_CLASS_NAME", impl_class_name},
-        // {"IMPL_CONST_NAME", impl_const_name}, // [ÒÆ³ı]
+        // {"IMPL_CONST_NAME", impl_const_name}, // [ç§»é™¤]
         {"IMPL_FILENAME_H", impl_filename_h},
         {"IMPL_FILENAME_CPP", impl_filename_cpp},
         {"IMPL_INCLUDE_GUARD_H", ToIncludeGuard(plugin_guard_prefix, impl_filename_h)},
         {"PLUGIN_NAME", plugin_name},
-        {"PLUGIN_NAMESPACE", plugin_namespace}, // [ĞÂ]
+        {"PLUGIN_NAMESPACE", plugin_namespace}, // [æ–°]
         {"ALIAS", alias},
-        {"UUID_IFACE", z3y::tool::generate_uuid_v4()}, // [ĞÂ]
-        {"UUID_IMPL", z3y::tool::generate_uuid_v4()}, // [ĞÂ] 
+        {"UUID_IFACE", z3y::tool::generate_uuid_v4()}, // [æ–°]
+        {"UUID_IMPL", z3y::tool::generate_uuid_v4()}, // [æ–°] 
         // (
-        // ÒÔÇ°½Ğ UUID)
+        // ä»¥å‰å« UUID)
 {"DATE", GetCurrentDate()}
     };
 
     try
     {
-        // 3. È·¶¨Â·¾¶
+        // 3. ç¡®å®šè·¯å¾„
         std::filesystem::path root_path = std::filesystem::current_path().parent_path();
         std::filesystem::path src_path = root_path / "src";
 
         std::filesystem::path iface_dir = src_path / interface_path;
         std::filesystem::path plugin_dir = src_path / plugin_name;
 
-        // 4. ´´½¨Ä¿Â¼
+        // 4. åˆ›å»ºç›®å½•
         std::filesystem::create_directories(iface_dir);
         std::filesystem::create_directories(plugin_dir);
 
-        // 5. Ğ´ÈëÎÄ¼ş
+        // 5. å†™å…¥æ–‡ä»¶
         WriteFile(iface_dir / interface_filename,
             ReplaceTokens(z3y::tool::templates::kInterfaceHeader, tokens));
 

@@ -1,10 +1,14 @@
 /**
  * @file z3y_framework.h
- * @brief z3y ²å¼ş¿ò¼Ü - ËŞÖ÷ (Host) API
+ * @brief z3y æ’ä»¶æ¡†æ¶ - å®¿ä¸» (Host) API
  * @details
- * ËŞÖ÷³ÌĞò (²å¼şµÄÊ¹ÓÃÕß)
- * Ö»ĞèÒª°üº¬ÕâÒ»¸öÍ·ÎÄ¼ş
- * ¾Í¿ÉÒÔÊ¹ÓÃ¿ò¼ÜµÄËùÓĞºËĞÄ¹¦ÄÜ¡£
+ * å®¿ä¸»ç¨‹åº (æ’ä»¶çš„ä½¿ç”¨è€…)
+ * åªéœ€è¦åŒ…å«è¿™ä¸€ä¸ªå¤´æ–‡ä»¶
+ * å°±å¯ä»¥ä½¿ç”¨æ¡†æ¶çš„æ‰€æœ‰æ ¸å¿ƒåŠŸèƒ½ã€‚
+ * [ä¿®æ”¹] [!!]
+ * æœ€ç»ˆå½’ä¸€åŒ–ï¼Œ
+ * æˆä¸ºæ’ä»¶ä½¿ç”¨è€…çš„
+ * * * * * å¤´æ–‡ä»¶ã€‚
  */
 
 #pragma once
@@ -12,19 +16,26 @@
 #ifndef Z3Y_FRAMEWORK_H_
 #define Z3Y_FRAMEWORK_H_
 
- // 1. ºËĞÄµÄ PluginManager ÊµÀı
+ // 1. æ ¸å¿ƒçš„ PluginManager å®ä¾‹
 #include "z3y_plugin_manager/plugin_manager.h" 
 
-// 2. ºËĞÄÀàĞÍ
-#include "framework/i_component.h"    // Ìá¹© PluginPtr
-#include "framework/class_id.h"       // Ìá¹© ClassID
+// 2. æ ¸å¿ƒç±»å‹
+#include "framework/i_component.h"    // æä¾› IComponent, PluginPtr
+#include "framework/class_id.h"       // æä¾› ClassID
 
-// 3. ºËĞÄ¹¤¾ß
-#include "framework/plugin_cast.h"    // Ìá¹© PluginCast
+// 3. æ ¸å¿ƒå·¥å…·
+#include "framework/plugin_cast.h"    // æä¾› PluginCast
 
-// 4. ÊÂ¼şÏµÍ³
-#include "framework/i_event_bus.h"      // Ìá¹© IEventBus
-#include "framework/connection_type.h"// IEventBus ÒÀÀµ
-#include "framework_events.h"         // ¿ò¼Ü±ê×¼ÊÂ¼ş
+// 4. äº‹ä»¶ç³»ç»Ÿå’Œå†…çœ
+#include "framework/i_event_bus.h"      // æä¾› IEventBus
+#include "framework/i_plugin_query.h"   // æä¾› IPluginQuery 
+                                        // 
+#include "framework/connection_type.h"// IEventBus ä¾èµ–
+#include "framework_events.h"         // æ¡†æ¶æ ‡å‡†äº‹ä»¶
+#include "framework/plugin_exceptions.h" // [!! 
+                                         // æ ¸å¿ƒ !!] 
+                                         // 
+                                         // 
+                                         // 
 
 #endif // Z3Y_FRAMEWORK_H_

@@ -1,10 +1,10 @@
 /**
  * @file event_helpers.h
- * @brief [ĞÂ]
- * ¶¨Òå Z3Y_DEFINE_EVENT
- * ºê£¬
- * ÓÃÓÚ¼ò»¯ÊÂ¼ş¶¨Òå¡£
- * @author (ÄúµÄÃû×Ö)
+ * @brief [æ–°]
+ * å®šä¹‰ Z3Y_DEFINE_EVENT
+ * å®ï¼Œ
+ * ç”¨äºç®€åŒ–äº‹ä»¶å®šä¹‰ã€‚
+ * @author (æ‚¨çš„åå­—)
  * @date 2025-11-12
  */
 #pragma once
@@ -15,29 +15,29 @@
 #include "framework/class_id.h"
 
  /**
-  * @brief [¿ò¼Ü¸¨Öúºê]
-  * ÓÃÓÚÔÚÊÂ¼ş½á¹¹ÌåÖĞÍ³Ò»¶¨Òå kEventId ºÍ kName¡£
+  * @brief [æ¡†æ¶è¾…åŠ©å®]
+  * ç”¨äºåœ¨äº‹ä»¶ç»“æ„ä½“ä¸­ç»Ÿä¸€å®šä¹‰ kEventId å’Œ kNameã€‚
   *
   * @param ClassName
-  * ÊÂ¼şµÄ½á¹¹ÌåÃû (ÀıÈç PluginLoadSuccessEvent)¡£
+  * äº‹ä»¶çš„ç»“æ„ä½“å (ä¾‹å¦‚ PluginLoadSuccessEvent)ã€‚
   * @param UuidString
-  * ÓÃÓÚÉú³É EventId
-  * µÄÎ¨Ò» UUID ×Ö·û´®¡£
+  * ç”¨äºç”Ÿæˆ EventId
+  * çš„å”¯ä¸€ UUID å­—ç¬¦ä¸²ã€‚
   */
 #define Z3Y_DEFINE_EVENT(ClassName, UuidString) \
     /** \
      * @brief 
-     * ÊÂ¼şµÄÎ¨Ò» ID (
-     * ÓÉ Z3Y_DEFINE_EVENT
-     * ×Ô¶¯Éú³É)¡£ \
+     * äº‹ä»¶çš„å”¯ä¸€ ID (
+     * ç”± Z3Y_DEFINE_EVENT
+     * è‡ªåŠ¨ç”Ÿæˆ)ã€‚ \
      */ \
          static constexpr z3y::EventId kEventId = \
          z3y::ConstexprHash(UuidString); \
          /** \
           * @brief
-          * ÊÂ¼şµÄÈËÀà¿É¶ÁÃû³Æ (
-          * ÓÉ Z3Y_DEFINE_EVENT
-          * ×Ô¶¯Éú³É)¡£ \
+          * äº‹ä»¶çš„äººç±»å¯è¯»åç§° (
+          * ç”± Z3Y_DEFINE_EVENT
+          * è‡ªåŠ¨ç”Ÿæˆ)ã€‚ \
           */ \
          static constexpr const char* kName = #ClassName;
 

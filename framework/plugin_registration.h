@@ -1,17 +1,20 @@
 /**
  * @file plugin_registration.h
- * @brief ¶¨Òå z3y::RegisterComponent ºÍ z3y::RegisterService Ä£°å¸¨Öúº¯Êı¡£
- * @author ËïÅôÓî
+ * @brief å®šä¹‰ z3y::RegisterComponent å’Œ z3y::RegisterService æ¨¡æ¿è¾…åŠ©å‡½æ•°ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * [ĞŞ¸Ä]£º
+ * [ä¿®æ”¹]ï¼š
  * 1.
  * RegisterComponent/RegisterService
- * [ĞŞ¸Ä]
- * µ÷ÓÃ GetInterfaceDetails()
- * ²¢´«µİ InterfaceDetails
- * ÁĞ±í¡£
- * 2. ×ñ´Ó Google ÃüÃûÔ¼¶¨
+ * [ä¿®æ”¹]
+ * è°ƒç”¨ GetInterfaceDetails()
+ * å¹¶ä¼ é€’ InterfaceDetails
+ * åˆ—è¡¨ã€‚
+ * 2. éµä» Google å‘½åçº¦å®š
+ * 3. [ä¿®æ”¹] [!!]
+ * å¢åŠ  "bool is_default"
+ * å‚æ•°
  */
 
 #pragma once
@@ -21,63 +24,77 @@
 
 #include "framework/i_plugin_registry.h"
 #include "framework/plugin_impl.h"  // 
- // [ĞŞ¸Ä] 
- // ÒÀÀµ PluginImpl 
- // ÒÔ»ñÈ¡ ImplClass::kClsid 
- // ºÍ GetInterfaceDetails
-#include <memory>                   // ÒÀÀµ std::make_shared
-#include <string>                   // ÒÀÀµ std::string
+ // [ä¿®æ”¹] 
+ // ä¾èµ– PluginImpl 
+ // ä»¥è·å– ImplClass::kClsid 
+ // å’Œ GetInterfaceDetails
+#include <memory>                   // ä¾èµ– std::make_shared
+#include <string>                   // ä¾èµ– std::string
 #include <vector>
 
 namespace z3y {
     /**
-     * @brief [¿ò¼Ü±ãÀû¹¤¾ß] ×Ô¶¯×¢²áÒ»¸ö¡°ÆÕÍ¨×é¼ş¡±(Ë²Ì¬)¡£
+     * @brief [æ¡†æ¶ä¾¿åˆ©å·¥å…·] è‡ªåŠ¨æ³¨å†Œä¸€ä¸ªâ€œæ™®é€šç»„ä»¶â€(ç¬æ€)ã€‚
      *
-     * @tparam ImplClass Òª×¢²áµÄ¾ßÌåÊµÏÖÀà¡£
-     * @param[in] registry ËŞÖ÷´«ÈëµÄ IPluginRegistry Ö¸Õë¡£
-     * @param[in] alias Ò»¸ö¿ÉÑ¡µÄ¡¢ÈËÀà¿É¶ÁµÄ×Ö·û´®±ğÃû¡£
+     * @tparam ImplClass è¦æ³¨å†Œçš„å…·ä½“å®ç°ç±»ã€‚
+     * @param[in] registry å®¿ä¸»ä¼ å…¥çš„ IPluginRegistry æŒ‡é’ˆã€‚
+     * @param[in] alias ä¸€ä¸ªå¯é€‰çš„ã€äººç±»å¯è¯»çš„å­—ç¬¦ä¸²åˆ«åã€‚
+     * @param[in] is_default [!!
+     * æ–°å¢ !!]
+     * æ˜¯å¦æ³¨å†Œä¸ºé»˜è®¤å®ç°ã€‚
      */
     template <typename ImplClass>
     void RegisterComponent(IPluginRegistry* registry,
-        const std::string& alias = "") {
-        // 1. ×Ô¶¯Éú³É¹¤³§ lambda
+        const std::string& alias = "",
+        bool is_default = false) { // [!! 
+        // æ–°å¢ !!]
+// 1. è‡ªåŠ¨ç”Ÿæˆå·¥å‚ lambda
         FactoryFunction factory = []() -> PluginPtr<IComponent> {
             return std::make_shared<ImplClass>();
             };
 
-        // 2. [ĞŞ¸Ä]£º
-        // Ò»´ÎĞÔµ÷ÓÃ£¬
-        // ²¢´«µİ InterfaceDetails 
-        // ÁĞ±í
+        // 2. [ä¿®æ”¹]ï¼š
+        // ä¸€æ¬¡æ€§è°ƒç”¨ï¼Œ
+        // å¹¶ä¼ é€’ InterfaceDetails 
+        // åˆ—è¡¨
         registry->RegisterComponent(ImplClass::kClsid, std::move(factory),
             false,  // is_singleton = false
             alias,
-            ImplClass::GetInterfaceDetails()  // [ĞŞ¸Ä]
+            ImplClass::GetInterfaceDetails(),  // [ä¿®æ”¹]
+            is_default // [!! 
+                       // æ–°å¢ !!]
         );
     }
 
     /**
-     * @brief [¿ò¼Ü±ãÀû¹¤¾ß] ×Ô¶¯×¢²áÒ»¸ö¡°µ¥Àı·şÎñ¡±¡£
+     * @brief [æ¡†æ¶ä¾¿åˆ©å·¥å…·] è‡ªåŠ¨æ³¨å†Œä¸€ä¸ªâ€œå•ä¾‹æœåŠ¡â€ã€‚
      *
-     * @tparam ImplClass Òª×¢²áµÄ¾ßÌåÊµÏÖÀà¡£
-     * @param[in] registry ËŞÖ÷´«ÈëµÄ IPluginRegistry Ö¸Õë¡£
-     * @param[in] alias Ò»¸ö¿ÉÑ¡µÄ¡¢ÈËÀà¿É¶ÁµÄ×Ö·û´®±ğÃû¡£
+     * @tparam ImplClass è¦æ³¨å†Œçš„å…·ä½“å®ç°ç±»ã€‚
+     * @param[in] registry å®¿ä¸»ä¼ å…¥çš„ IPluginRegistry æŒ‡é’ˆã€‚
+     * @param[in] alias ä¸€ä¸ªå¯é€‰çš„ã€äººç±»å¯è¯»çš„å­—ç¬¦ä¸²åˆ«åã€‚
+     * @param[in] is_default [!!
+     * æ–°å¢ !!]
+     * æ˜¯å¦æ³¨å†Œä¸ºé»˜è®¤å®ç°ã€‚
      */
     template <typename ImplClass>
-    void RegisterService(IPluginRegistry* registry, const std::string& alias = "") {
-        // 1. ×Ô¶¯Éú³É¹¤³§ lambda
+    void RegisterService(IPluginRegistry* registry, const std::string& alias = "",
+        bool is_default = false) { // [!! 
+        // æ–°å¢ !!]
+// 1. è‡ªåŠ¨ç”Ÿæˆå·¥å‚ lambda
         FactoryFunction factory = []() -> PluginPtr<IComponent> {
             return std::make_shared<ImplClass>();
             };
 
-        // 2. [ĞŞ¸Ä]£º
-        // Ò»´ÎĞÔµ÷ÓÃ£¬
-        // ²¢´«µİ InterfaceDetails 
-        // ÁĞ±í
+        // 2. [ä¿®æ”¹]ï¼š
+        // ä¸€æ¬¡æ€§è°ƒç”¨ï¼Œ
+        // å¹¶ä¼ é€’ InterfaceDetails 
+        // åˆ—è¡¨
         registry->RegisterComponent(ImplClass::kClsid, std::move(factory),
             true,  // is_singleton = true
             alias,
-            ImplClass::GetInterfaceDetails()  // [ĞŞ¸Ä]
+            ImplClass::GetInterfaceDetails(),  // [ä¿®æ”¹]
+            is_default // [!! 
+                       // æ–°å¢ !!]
         );
     }
 

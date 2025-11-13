@@ -1,7 +1,7 @@
 /**
  * @file uuid_gen.h
- * @brief ÉùÃ÷Ò»¸ö¿çÆ½Ì¨µÄ UUID v4 Éú³ÉÆ÷¡£
- * @author ËïÅôÓî
+ * @brief å£°æ˜ä¸€ä¸ªè·¨å¹³å°çš„ UUID v4 ç”Ÿæˆå™¨ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  */
 
@@ -15,8 +15,8 @@ namespace z3y
     namespace tool
     {
         /**
-         * @brief Ê¹ÓÃ C++11 <random> Éú³ÉÒ»¸ö UUID v4 ¼æÈİµÄ×Ö·û´®¡£
-         * @return Ò»¸ö¸ñÊ½Èç "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx" µÄ UUID ×Ö·û´®¡£
+         * @brief ä½¿ç”¨ C++11 <random> ç”Ÿæˆä¸€ä¸ª UUID v4 å…¼å®¹çš„å­—ç¬¦ä¸²ã€‚
+         * @return ä¸€ä¸ªæ ¼å¼å¦‚ "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx" çš„ UUID å­—ç¬¦ä¸²ã€‚
          */
         std::string generate_uuid_v4();
 

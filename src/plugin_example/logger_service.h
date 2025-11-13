@@ -1,19 +1,19 @@
 /**
  * @file logger_service.h
- * @brief ¶¨Òå z3y::example::LoggerService (µ¥Àı)
- * @author ËïÅôÓî
+ * @brief å®šä¹‰ z3y::example::LoggerService (å•ä¾‹)
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * [ĞŞ¸Ä]
+ * [ä¿®æ”¹]
  * ...
- * 3. [ĞŞ¸Ä] [!!]
+ * 3. [ä¿®æ”¹] [!!]
  * Z3Y_DEFINE_COMPONENT_ID
- * ºêÒÑÒÆ»ØÀà *ÄÚ²¿*¡£
- * 4. [ĞŞ¸Ä] [!!]
- * ¼ò»¯ PluginImpl
- * ¼Ì³Ğ (
- * ÒÆ³ı kClsid
- * Ä£°å²ÎÊı)
+ * å®å·²ç§»å›ç±» *å†…éƒ¨*ã€‚
+ * 4. [ä¿®æ”¹] [!!]
+ * ç®€åŒ– PluginImpl
+ * ç»§æ‰¿ (
+ * ç§»é™¤ kClsid
+ * æ¨¡æ¿å‚æ•°)
  */
 
 #pragma once
@@ -21,33 +21,31 @@
 #ifndef Z3Y_PLUGIN_EXAMPLE_LOGGER_SERVICE_H_
 #define Z3Y_PLUGIN_EXAMPLE_LOGGER_SERVICE_H_
 
-#include "interfaces_example/i_logger.h"  // ÒÀÀµ ILogger
-#include "framework/plugin_impl.h"        // ÒÀÀµ PluginImpl
-#include "framework/class_id.h"
-#include "framework/component_helpers.h"  // [ĞÂ]
+#include "interfaces_example/i_logger.h"  // ä¾èµ– ILogger
+#include "framework/z3y_plugin_sdk.h"
 #include <mutex>
 
 namespace z3y {
-    namespace example { // [ĞŞ¸Ä]
+    namespace example { // [ä¿®æ”¹]
 
-        // --- 1. [ĞŞ¸Ä] ClassId 
-        // ¶¨ÒåÒÑÒÆÈëÀàÄÚ²¿ ---
+        // --- 1. [ä¿®æ”¹] ClassId 
+        // å®šä¹‰å·²ç§»å…¥ç±»å†…éƒ¨ ---
 
         /**
          * @class LoggerService
-         * @brief ILogger ½Ó¿ÚµÄµ¥ÀıÊµÏÖ¡£
+         * @brief ILogger æ¥å£çš„å•ä¾‹å®ç°ã€‚
          */
         class LoggerService
             : public PluginImpl<LoggerService,
-            ILogger> // [ĞŞ¸Ä] 
-            // ÒÆ³ıÁË kClsid 
-            // Ä£°å²ÎÊı
+            ILogger> // [ä¿®æ”¹] 
+            // ç§»é™¤äº† kClsid 
+            // æ¨¡æ¿å‚æ•°
         {
         public:
             /**
-             * @brief [ĞÂ]
-             * Ê¹ÓÃ Z3Y_DEFINE_COMPONENT_ID
-             * ¶¨Òå kClsid
+             * @brief [æ–°]
+             * ä½¿ç”¨ Z3Y_DEFINE_COMPONENT_ID
+             * å®šä¹‰ kClsid
              */
             Z3Y_DEFINE_COMPONENT_ID("z3y-example-CLoggerService-UUID-C50A10B4")
 
@@ -55,7 +53,7 @@ namespace z3y {
             LoggerService();
             virtual ~LoggerService();
 
-            // --- ILogger ½Ó¿ÚÊµÏÖ ---
+            // --- ILogger æ¥å£å®ç° ---
             void Log(const std::string& message) override;
 
         private:

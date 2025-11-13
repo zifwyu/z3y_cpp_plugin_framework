@@ -1,37 +1,33 @@
 /**
  * @file main.cpp
- * @brief ËŞÖ÷³ÌĞò (Host) µÄ¿ØÖÆÌ¨Ê¾Àı¡£
- * @author ËïÅôÓî
+ * @brief å®¿ä¸»ç¨‹åº (Host) çš„æ§åˆ¶å°ç¤ºä¾‹ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * [ĞŞ¸Ä]
+ * [ä¿®æ”¹]
  * ...
- * 12. [ĞŞ¸Ä] [!!]
- * ËŞÖ÷³ÌĞòÒÑ¸üĞÂ£¬
- * Ê¹ÓÃ
- * "
- * ·½°¸ H
- * " (
- * Òì³£
- * )
- * * * * -
- * Ê¹ÓÃ
- * manager->GetService()
- * -
- * Ê¹ÓÃ try/catch (const PluginException& e)
+ * 13. [ä¿®æ”¹] [!!]
+ * æ¼”ç¤ºä½¿ç”¨
+ * GetDefaultService<T>()
+ * API
+ * 14. [ä¿®æ”¹] [!!]
+ * IPluginQuery
+ * æ‰“å°é€»è¾‘
+ * ç°åœ¨æ˜¾ç¤º
+ * "is_registered_as_default"
  */
 
- // 1. °üº¬¿ò¼ÜºËĞÄÍ·ÎÄ¼ş
+ // 1. åŒ…å«æ¡†æ¶æ ¸å¿ƒå¤´æ–‡ä»¶
 #include "framework/z3y_framework.h"
 #include "framework/class_id.h"
 #include "framework/plugin_exceptions.h" // [!! 
-                                         // ĞÂÔö !!]
+                                         // æ–°å¢ !!]
 
-// 2. °üº¬´ËËŞÖ÷Ï£ÍûÖ±½ÓÊ¹ÓÃµÄ½Ó¿Ú
+// 2. åŒ…å«æ­¤å®¿ä¸»å¸Œæœ›ç›´æ¥ä½¿ç”¨çš„æ¥å£
 #include "interfaces_example/i_simple.h"
 #include "interfaces_example/i_logger.h"
 
-// 3. °üº¬ÓÃÓÚ¼àÌıµÄÊÂ¼ş
+// 3. åŒ…å«ç”¨äºç›‘å¬çš„äº‹ä»¶
 #include "framework/framework_events.h"
 
 // 4. C++ StdLib
@@ -41,7 +37,12 @@
 #include <iomanip>
 #include <filesystem>
 
-// --- ¸¨Öúº¯Êı ---
+#ifdef _WIN32
+#include <Windows.h> // 
+                     // 
+#endif
+
+// --- è¾…åŠ©å‡½æ•° ---
 
 namespace {
 
@@ -57,16 +58,16 @@ namespace {
 
     //
     // 
-    // ¶¨ÒåÒ»¸ö¸¨Öú½á¹¹Ìå£¬
-    // ÓÃÓÚÑİÊ¾ enable_shared_from_this
+    // å®šä¹‰ä¸€ä¸ªè¾…åŠ©ç»“æ„ä½“ï¼Œ
+    // ç”¨äºæ¼”ç¤º enable_shared_from_this
     //
     struct HostLogger : public std::enable_shared_from_this<HostLogger> {
 
         // 
-        // [ÊÂ¼ş»Øµ÷] 
-        // (±£³Ö²»±ä, 
-        // ÊÂ¼şÈÔÔÚ z3y::event 
-        // ÃüÃû¿Õ¼ä)
+        // [äº‹ä»¶å›è°ƒ] 
+        // (ä¿æŒä¸å˜, 
+        // äº‹ä»¶ä»åœ¨ z3y::event 
+        // å‘½åç©ºé—´)
         //
         void OnPluginLoaded(const z3y::event::PluginLoadSuccessEvent& e) {
             std::cout << "[Host] Plugin Loaded: " << e.plugin_path_ << std::endl;
@@ -96,33 +97,41 @@ namespace {
         }
     };
 
-}  // ÄäÃûÃüÃû¿Õ¼ä
+}  // åŒ¿åå‘½åç©ºé—´
 
 
-// --- Ö÷º¯Êı ---
+// --- ä¸»å‡½æ•° ---
 
 int main(int argc, char* argv[]) {
+#ifdef _WIN32
+    // 
+    // 
+    // 
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+#endif
+
     std::cout << "--- z3y C++ Plugin Framework Host Demo ---" << std::endl;
 
     try { // [!! 
-        // ĞŞ¸Ä !!] 
+        // ä¿®æ”¹ !!] 
         // 
         // 
         // 
         // 
 
-      // 1. ´´½¨ PluginManager
+      // 1. åˆ›å»º PluginManager
         z3y::PluginPtr<z3y::PluginManager> manager = z3y::PluginManager::Create();
 
-        // 2. [!! ĞŞ¸Ä !!] 
-        // »ñÈ¡ºËĞÄ·şÎñ (IEventBus) 
+        // 2. [!! ä¿®æ”¹ !!] 
+        // è·å–æ ¸å¿ƒæœåŠ¡ (IEventBus) 
         // (
-        // Ê¹ÓÃĞÂ API
+        // ä½¿ç”¨æ–° API
         // )
         z3y::PluginPtr<z3y::IEventBus> bus =
             manager->GetService<z3y::IEventBus>(z3y::clsid::kEventBus);
 
-        // 3. [ÑİÊ¾] ¶©ÔÄÊÂ¼ş
+        // 3. [æ¼”ç¤º] è®¢é˜…äº‹ä»¶
         auto logger = std::make_shared<HostLogger>();
         // (
         // 
@@ -140,7 +149,7 @@ int main(int argc, char* argv[]) {
             logger, &HostLogger::OnAsyncException,
             z3y::ConnectionType::kQueued);
 
-        // 4. [ÑİÊ¾] ¼ÓÔØ²å¼ş
+        // 4. [æ¼”ç¤º] åŠ è½½æ’ä»¶
         std::cout << "\n[Host] Loading 'plugin_example' (recursive)..."
             << std::endl;
 
@@ -156,13 +165,13 @@ int main(int argc, char* argv[]) {
             true
         );
 
-        // 5. [ÑİÊ¾] [ĞÂÔö] ²éÑ¯ÒÑ¼ÓÔØµÄ²å¼şºÍ×é¼ş
+        // 5. [æ¼”ç¤º] [æ–°å¢] æŸ¥è¯¢å·²åŠ è½½çš„æ’ä»¶å’Œç»„ä»¶
         std::cout << "\n[Host] Querying loaded plugins and components..."
             << std::endl;
 
-        // [!! ĞŞ¸Ä !!] 
+        // [!! ä¿®æ”¹ !!] 
         // (
-        // Ê¹ÓÃĞÂ API
+        // ä½¿ç”¨æ–° API
         // )
         z3y::PluginPtr<z3y::IPluginQuery> query_service =
             manager->GetService<z3y::IPluginQuery>(z3y::clsid::kPluginQuery);
@@ -171,7 +180,7 @@ int main(int argc, char* argv[]) {
         // 
         // 
         // )
-        // 5a. »ñÈ¡ DLL ÁĞ±í
+        // 5a. è·å– DLL åˆ—è¡¨
         std::vector<std::string> loaded_plugins =
             query_service->GetLoadedPluginFiles();
         std::cout << "--- Loaded Plugin Files (" << loaded_plugins.size()
@@ -180,7 +189,7 @@ int main(int argc, char* argv[]) {
             std::cout << "  - " << path << std::endl;
         }
 
-        // 5b. »ñÈ¡×é¼şÁĞ±í
+        // 5b. è·å–ç»„ä»¶åˆ—è¡¨
         std::vector<z3y::ComponentDetails> components =
             query_service->GetAllComponents();
         std::cout << "--- Registered Components (" << components.size()
@@ -188,87 +197,81 @@ int main(int argc, char* argv[]) {
         for (const auto& detail : components) {
             std::cout << "  - Alias: " << detail.alias
                 << " (Singleton: " << std::boolalpha
-                << detail.is_singleton << ")\n"
+                << detail.is_singleton << ")"
+                << " (IsDefault: " << detail.is_registered_as_default << ")" // [!! 
+                // æ–°å¢ !!]
+                << "\n"
                 << "    CLSID: 0x" << std::hex << detail.clsid
                 << std::dec << "\n"
                 << "    From: " << detail.source_plugin_path << "\n"
-                << "    Interfaces:" << std::endl; // [ĞÂ]
+                << "    Interfaces:" << std::endl; // [æ–°]
 
             // (
-            // ÉÏÒ»ÂÖÒÑĞŞ¸Ä
+            // ä¸Šä¸€è½®å·²ä¿®æ”¹
             // )
             for (const auto& iface : detail.implemented_interfaces) {
                 std::cout << "      - " << iface.name
                     << " (IID: 0x" << std::hex << iface.iid
                     << std::dec << ")"
-                    << " [v" << iface.version.major << "." << iface.version.minor << "]" // [ĞÂ]
+                    << " [v" << iface.version.major << "." << iface.version.minor << "]" // [æ–°]
                     << std::endl;
             }
         }
 
 
-        // 6. [ÑİÊ¾] »ñÈ¡ "Logger.Default" (µ¥Àı·şÎñ)
-        std::cout << "\n[Host] Getting 'Logger.Default' service..." << std::endl;
-        // [!! ĞŞ¸Ä !!] 
-        // (
-        // Ê¹ÓÃĞÂ API
-        // )
+
+
+        // 6. [æ¼”ç¤º] [!! 
+        //    ä¿®æ”¹ !!] 
+        //    è·å– "
+        //    é»˜è®¤çš„
+        //    " 
+        //    æ—¥å¿—æœåŠ¡
+        std::cout << "\n[Host] Getting *Default* Logger service..." << std::endl;
+
         z3y::PluginPtr<z3y::example::ILogger> logger_service =
-            manager->GetService<z3y::example::ILogger>("Logger.Default");
+            manager->GetDefaultService<z3y::example::ILogger>();
 
-        // (
-        // 
-        // 
-        // )
-        logger_service->Log("[Host] Logger service acquired successfully.");
+        logger_service->Log("[Host] Default Logger service acquired successfully.");
 
-        // 7. [ÑİÊ¾] ´´½¨ "Simple.A" (ÆÕÍ¨×é¼ş)
-        std::cout << "\n[Host] Creating 'Simple.A' component instance..."
-            << std::endl;
-        // [!! ĞŞ¸Ä !!] 
-        // (
-        // Ê¹ÓÃĞÂ API
-        // )
-        z3y::PluginPtr<z3y::example::ISimple> simple_a =
-            manager->CreateInstance<z3y::example::ISimple>("Simple.A");
 
-        // (
-        // 
-        // 
-        // )
-        std::cout << "[Host] Simple.A says: " << simple_a->GetSimpleString()
+        // 7. [æ¼”ç¤º] [!! 
+        //    ä¿®æ”¹ !!] 
+        //    è·å– "
+        //    é»˜è®¤çš„
+        //    " ISimple 
+        //    å®ä¾‹
+        std::cout << "\n[Host] Creating *Default* 'ISimple' component instance..."
             << std::endl;
 
+        z3y::PluginPtr<z3y::example::ISimple> simple_default =
+            manager->CreateDefaultInstance<z3y::example::ISimple>();
 
-        // 8. [ÑİÊ¾] ´´½¨ "Simple.B" (ÆÕÍ¨×é¼ş)
-        std::cout << "\n[Host] Creating 'Simple.B' component instance..."
+        std::cout << "[Host] Default ISimple says: " << simple_default->GetSimpleString()
             << std::endl;
-        // [!! ĞŞ¸Ä !!] 
-        // (
-        // Ê¹ÓÃĞÂ API
-        // )
+
+        // 
+        // 
+        // 
+        std::cout << "[Host] Creating 'Simple.B' (by alias) component instance..." << std::endl;
         z3y::PluginPtr<z3y::example::ISimple> simple_b =
             manager->CreateInstance<z3y::example::ISimple>("Simple.B");
-
-        // (
-        // 
-        // 
-        // )
         std::cout << "[Host] Simple.B says: " << simple_b->GetSimpleString()
             << std::endl;
 
 
-        // 9. [ÑİÊ¾] Ğ¶ÔØËùÓĞ²å¼ş (²¢ÖØÖÃ¹ÜÀíÆ÷)
+        // 9. [æ¼”ç¤º] å¸è½½æ‰€æœ‰æ’ä»¶ (å¹¶é‡ç½®ç®¡ç†å™¨)
         std::cout << "\n[Host] Unloading all plugins..." << std::endl;
 
-        // [!! ±ÀÀ£ĞŞ¸´ !!]
+        // [!! å´©æºƒä¿®å¤ !!]
         // 
-        // (ÒÑÍê³É) 
-        // ÔÚ manager 
-        // Îö¹¹Ç°£¬
-        // ±ØĞëÊÍ·ÅËùÓĞ²å¼ş¶ÔÏó
+        // (å·²å®Œæˆ) 
+        // åœ¨ manager 
+        // ææ„å‰ï¼Œ
+        // å¿…é¡»é‡Šæ”¾æ‰€æœ‰æ’ä»¶å¯¹è±¡
         logger_service.reset();
-        simple_a.reset();
+        simple_default.reset(); // [!! 
+        // ä¿®æ”¹ !!]
         simple_b.reset();
 
         // 
@@ -284,22 +287,23 @@ int main(int argc, char* argv[]) {
 
         manager->UnloadAllPlugins();
 
-        // 10. [ÑİÊ¾] ³¢ÊÔÔÙ´Î»ñÈ¡·şÎñ (´ËÊ±Ó¦Ê§°Ü)
+        // 10. [æ¼”ç¤º] å°è¯•å†æ¬¡è·å–æœåŠ¡ (æ­¤æ—¶åº”å¤±è´¥)
         std::cout << "\n[Host] Re-testing 'Logger.Default' after unload..."
             << std::endl;
 
         try { // [!! 
-            // ĞŞ¸Ä !!] 
+            // ä¿®æ”¹ !!] 
             // 
             // 
             // 
             // 
             z3y::PluginPtr<z3y::example::ILogger> logger_service_2 =
-                manager->GetService<z3y::example::ILogger>("Logger.Default");
+                manager->GetDefaultService<z3y::example::ILogger>(); // [!! 
+            // ä¿®æ”¹ !!]
 
-            // 
-            // 
-            // 
+// 
+// 
+// 
             std::cout << "[Host] ERROR: Logger service is still valid!"
                 << std::endl;
         }
@@ -311,12 +315,12 @@ int main(int argc, char* argv[]) {
             std::cout
                 << "[Host] Logger service is null (Unload successful). Reason: "
                 << z3y::ResultToString(e.GetError()) << std::endl; // [!! 
-            // ĞŞ¸Ä !!]
+            // ä¿®æ”¹ !!]
         }
 
         std::cout << "\n--- Demo Finished. Press Enter to Exit ---" << std::endl;
 
-        // [!! ±ÀÀ£ĞŞ¸´ !!]
+        // [!! å´©æºƒä¿®å¤ !!]
         // 
         // 
         // (
@@ -324,11 +328,11 @@ int main(int argc, char* argv[]) {
         // 
         // )
 
-        // [ĞŞ¸Ä]
-        // ²»ÔÙĞèÒªµ÷ÓÃ manager->Shutdown()
+        // [ä¿®æ”¹]
+        // ä¸å†éœ€è¦è°ƒç”¨ manager->Shutdown()
         // manager 
-        // ½«ÔÚ main 
-        // ÍË³öÊ±×Ô¶¯Îö¹¹
+        // å°†åœ¨ main 
+        // é€€å‡ºæ—¶è‡ªåŠ¨ææ„
         std::cout << "[Host] Exiting... PluginManager will now auto-destruct (RAII)."
             << std::endl;
 
@@ -340,7 +344,7 @@ int main(int argc, char* argv[]) {
     }
     catch (const z3y::PluginException& e) {
         // [!! 
-        // ĞŞ¸Ä !!] 
+        // ä¿®æ”¹ !!] 
         // 
         // 
         // 

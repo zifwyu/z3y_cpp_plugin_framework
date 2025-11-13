@@ -1,18 +1,18 @@
 /**
  * @file i_event_bus.h
- * @brief ¶¨Òå z3y::IEventBus ½Ó¿ÚºÍ z3y::Event »ùÀà¡£
- * @author ËïÅôÓî
+ * @brief å®šä¹‰ z3y::IEventBus æ¥å£å’Œ z3y::Event åŸºç±»ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * [ĞŞ¸Ä]
+ * [ä¿®æ”¹]
  * 1.
- * ×ñ´Ó Google ÃüÃûÔ¼¶¨
+ * éµä» Google å‘½åçº¦å®š
  * 2. [FIX]
- * ĞŞÕı SubscribeGlobal / SubscribeToSender
- * 3. [ĞŞ¸Ä]
- * Ê¹ÓÃ Z3Y_DEFINE_INTERFACE
- * ºê (
- * °æ±¾ 1.0)
+ * ä¿®æ­£ SubscribeGlobal / SubscribeToSender
+ * 3. [ä¿®æ”¹]
+ * ä½¿ç”¨ Z3Y_DEFINE_INTERFACE
+ * å® (
+ * ç‰ˆæœ¬ 1.0)
  */
 
 #pragma once
@@ -23,7 +23,7 @@
 #include "framework/class_id.h"
 #include "framework/i_component.h"
 #include "framework/connection_type.h"
-#include "framework/interface_helpers.h" // [ĞÂ]
+#include "framework/interface_helpers.h" // [æ–°]
 #include <functional>
 #include <typeindex>
 #include <memory>
@@ -33,41 +33,41 @@ namespace z3y {
 
     /**
      * @struct Event
-     * @brief ËùÓĞ¡°ĞÅºÅ¡±»ò¡°ÊÂ¼ş¡±µÄ¿Õ»ùÀà¡£
+     * @brief æ‰€æœ‰â€œä¿¡å·â€æˆ–â€œäº‹ä»¶â€çš„ç©ºåŸºç±»ã€‚
      */
     struct Event {
         /**
-         * @brief ĞéÎö¹¹º¯Êı¡£
+         * @brief è™šææ„å‡½æ•°ã€‚
          */
         virtual ~Event() = default;
     };
 
     /**
      * @class IEventBus
-     * @brief [¿ò¼ÜºËĞÄ] ÊÂ¼ş×ÜÏß (ĞÅºÅ/²Û) ½Ó¿Ú¡£
+     * @brief [æ¡†æ¶æ ¸å¿ƒ] äº‹ä»¶æ€»çº¿ (ä¿¡å·/æ§½) æ¥å£ã€‚
      */
     class IEventBus : public virtual IComponent
     {
     public:
         /**
-         * @brief [ĞŞ¸Ä]
-         * Ê¹ÓÃ Z3Y_DEFINE_INTERFACE
-         * ºê (
-         * ¶¨ÒåÎª 1.0
-         * °æ±¾)
+         * @brief [ä¿®æ”¹]
+         * ä½¿ç”¨ Z3Y_DEFINE_INTERFACE
+         * å® (
+         * å®šä¹‰ä¸º 1.0
+         * ç‰ˆæœ¬)
          */
         Z3Y_DEFINE_INTERFACE(IEventBus, "z3y-core-IEventBus-IID-A0000002", \
             1, 0)
 
             /**
-             * @brief ĞéÎö¹¹º¯Êı¡£
+             * @brief è™šææ„å‡½æ•°ã€‚
              */
             virtual ~IEventBus() = default;
 
-        // --- 1. È«¾Ö¹ã²¥ (Global Broadcast) ---
+        // --- 1. å…¨å±€å¹¿æ’­ (Global Broadcast) ---
 
         /**
-         * @brief [Ä£°å] ¶©ÔÄÒ»¸öÈ«¾ÖÊÂ¼ş (¹ã²¥)¡£
+         * @brief [æ¨¡æ¿] è®¢é˜…ä¸€ä¸ªå…¨å±€äº‹ä»¶ (å¹¿æ’­)ã€‚
          */
         template <typename TEvent, typename TSubscriber, typename TCallback>
         void SubscribeGlobal(std::shared_ptr<TSubscriber> subscriber,
@@ -98,7 +98,7 @@ namespace z3y {
         }
 
         /**
-         * @brief [Ä£°å] ·¢²¼Ò»¸öÈ«¾ÖÊÂ¼ş (¹ã²¥)¡£
+         * @brief [æ¨¡æ¿] å‘å¸ƒä¸€ä¸ªå…¨å±€äº‹ä»¶ (å¹¿æ’­)ã€‚
          */
         template <typename TEvent, typename... Args>
         void FireGlobal(Args&&... args) {
@@ -113,10 +113,10 @@ namespace z3y {
             FireGlobalImpl(TEvent::kEventId, base_event);
         }
 
-        // --- 2. ÊµÀıµ½ÊµÀı (Sender-Specific) ---
+        // --- 2. å®ä¾‹åˆ°å®ä¾‹ (Sender-Specific) ---
 
         /**
-         * @brief [Ä£°å] ¶©ÔÄÒ»¸öÌØ¶¨·¢ËÍÕßµÄÊÂ¼ş¡£
+         * @brief [æ¨¡æ¿] è®¢é˜…ä¸€ä¸ªç‰¹å®šå‘é€è€…çš„äº‹ä»¶ã€‚
          */
         template <typename TEvent, typename TSender, typename TSubscriber,
             typename TCallback>
@@ -152,7 +152,7 @@ namespace z3y {
         }
 
         /**
-         * @brief [Ä£°å] Ïò¶©ÔÄÁË´Ë·¢ËÍÕßµÄ¶©ÔÄÕß·¢²¼ÊÂ¼ş¡£
+         * @brief [æ¨¡æ¿] å‘è®¢é˜…äº†æ­¤å‘é€è€…çš„è®¢é˜…è€…å‘å¸ƒäº‹ä»¶ã€‚
          */
         template <typename TEvent, typename TSender, typename... Args>
         void FireToSender(std::shared_ptr<TSender> sender, Args&&... args) {
@@ -168,10 +168,10 @@ namespace z3y {
             FireToSenderImpl(sender_key, TEvent::kEventId, base_event);
         }
 
-        // --- 3. ÊÖ¶¯ÉúÃüÖÜÆÚ¹ÜÀí ---
+        // --- 3. æ‰‹åŠ¨ç”Ÿå‘½å‘¨æœŸç®¡ç† ---
 
         /**
-         * @brief [¿ÉÑ¡] Á¢¼´È¡Ïû´Ë¶©ÔÄÕß(subscriber)µÄËùÓĞ¶©ÔÄ¡£
+         * @brief [å¯é€‰] ç«‹å³å–æ¶ˆæ­¤è®¢é˜…è€…(subscriber)çš„æ‰€æœ‰è®¢é˜…ã€‚
          */
         virtual void Unsubscribe(std::shared_ptr<void> subscriber) = 0;
 
@@ -209,12 +209,12 @@ namespace z3y {
     };
 
     /**
-     * @brief IEventBus µÄÈ«¾ÖÎ¨Ò» ClassId¡£
+     * @brief IEventBus çš„å…¨å±€å”¯ä¸€ ClassIdã€‚
      */
     namespace clsid {
         /**
-         * @brief [ĞŞ¸Ä] ¿ò¼ÜºËĞÄÊÂ¼ş×ÜÏß·şÎñµÄ "·şÎñID"¡£
-         * ËŞÖ÷³ÌĞòÊ¹ÓÃ´Ë ID À´ GetService¡£
+         * @brief [ä¿®æ”¹] æ¡†æ¶æ ¸å¿ƒäº‹ä»¶æ€»çº¿æœåŠ¡çš„ "æœåŠ¡ID"ã€‚
+         * å®¿ä¸»ç¨‹åºä½¿ç”¨æ­¤ ID æ¥ GetServiceã€‚
          */
         constexpr ClassId kEventBus =
             ConstexprHash("z3y-core-event-bus-SERVICE-UUID-D54E82F1");

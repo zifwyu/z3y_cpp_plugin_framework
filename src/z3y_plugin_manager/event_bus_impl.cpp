@@ -1,30 +1,31 @@
 /**
  * @file event_bus_impl.cpp
- * @brief z3y::PluginManager ÀàµÄ IEventBus ½Ó¿ÚÊµÏÖ¡£
- * @author ËïÅôÓî
+ * @brief z3y::PluginManager ç±»çš„ IEventBus æ¥å£å®ç°ã€‚
+ * @author å­™é¹å®‡
  * @date 2025-11-10
  *
- * ... (Ô­ÓĞĞŞ¸´ÈÕÖ¾) ...
- * [ĞŞ¸Ä]
- * 1. ×ñ´Ó Google ÃüÃûÔ¼¶¨ (EventId,
- * struct members without trailing _)¡£
+ * ... (åŸæœ‰ä¿®å¤æ—¥å¿—) ...
+ * [ä¿®æ”¹]
+ * 1. éµä» Google å‘½åçº¦å®š (EventId,
+ * struct members without trailing _)ã€‚
  */
 
 #include "plugin_manager.h"
-#include <algorithm>  // ÓÃÓÚ std::remove_if
-#include <chrono>     // [Fix 6] ÒÀÀµ std::chrono
+#include <algorithm>  // ç”¨äº std::remove_if
+#include <chrono>     // [Fix 6] ä¾èµ– std::chrono
 #include <set>
 #include <utility>
 #include <vector>
+#include <unordered_map> // [!! æ–°å¢ !!] ç”¨äº EventMap/SenderMap å®ç°
 
 namespace z3y {
 
     /**
-     * @brief [¸¨Öúº¯Êı] ÇåÀíÒÑÊ§Ğ§µÄ(expired)¶©ÔÄÕß (weak_ptr)¡£
+     * @brief [è¾…åŠ©å‡½æ•°] æ¸…ç†å·²å¤±æ•ˆçš„(expired)è®¢é˜…è€… (weak_ptr)ã€‚
      *
-     * [Fix 5] (ÖØ¹¹):
+     * [Fix 5] (é‡æ„):
      * ...
-     * [ĞŞ¸Ä] Ê¹ÓÃ struct member (s.subscriber_id)
+     * [ä¿®æ”¹] ä½¿ç”¨ struct member (s.subscriber_id)
      */
     void PluginManager::CleanupExpiredSubscriptions(
         std::vector<PluginManager::Subscription>& subs, bool check_sender_also,
@@ -34,26 +35,26 @@ namespace z3y {
                 subs.begin(), subs.end(),
                 [&gc_queue, check_sender_also](
                     const PluginManager::Subscription& s) {
-                        // ¼ì²é¶©ÔÄÕßÊÇ·ñÒÑÊ§Ğ§
+                        // æ£€æŸ¥è®¢é˜…è€…æ˜¯å¦å·²å¤±æ•ˆ
                         bool expired = s.subscriber_id.expired();
 
-                        // Èç¹û¶©ÔÄÕßÎ´Ê§Ğ§£¬
-                        // ²¢ÇÒÎÒÃÇĞèÒª¼ì²é·¢ËÍÕß...
+                        // å¦‚æœè®¢é˜…è€…æœªå¤±æ•ˆï¼Œ
+                        // å¹¶ä¸”æˆ‘ä»¬éœ€è¦æ£€æŸ¥å‘é€è€…...
                         if (!expired && check_sender_also) {
-                            // ¼ì²é·¢ËÍÕßÊÇ·ñÒÑÊ§Ğ§
-                            // (×¢Òâ: owner_before
-                            //  ¼ì²éÈ·±£ sender_id
-                            //  ·Ç¿Õ)
+                            // æ£€æŸ¥å‘é€è€…æ˜¯å¦å·²å¤±æ•ˆ
+                            // (æ³¨æ„: owner_before
+                            //  æ£€æŸ¥ç¡®ä¿ sender_id
+                            //  éç©º)
                             expired = !s.sender_id.owner_before(std::weak_ptr<void>()) &&
                                 s.sender_id.expired();
                         }
 
                         if (expired) {
-                            // [Fix 5] ·¢ÏÖÁËÊ§Ğ§¶©ÔÄ£¡
-                            // 1. ½«Æä·ÅÈë GC ¶ÓÁĞ...
+                            // [Fix 5] å‘ç°äº†å¤±æ•ˆè®¢é˜…ï¼
+                            // 1. å°†å…¶æ”¾å…¥ GC é˜Ÿåˆ—...
                             gc_queue.push(s.subscriber_id);
 
-                            // 2. ·µ»Ø true...
+                            // 2. è¿”å› true...
                             return true;
                         }
                         return false;
@@ -61,53 +62,53 @@ namespace z3y {
             subs.end());
     }
 
-    // --- 1. ÊÂ¼şÑ­»· (Event Loop) ---
+    // --- 1. äº‹ä»¶å¾ªç¯ (Event Loop) ---
 
     /**
-     * @brief ÊÂ¼şÑ­»·¹¤×÷Ïß³ÌµÄÖ÷º¯Êı¡£
+     * @brief äº‹ä»¶å¾ªç¯å·¥ä½œçº¿ç¨‹çš„ä¸»å‡½æ•°ã€‚
      *
-     * ... (Fix 6 ÈÕÖ¾) ...
+     * ... (Fix 6 æ—¥å¿—) ...
      */
     void PluginManager::EventLoop() {
-        // [Fix 6] ¶¨ÒåÒ»¸öÑ­»·³¬Ê±Ê±¼ä
+        // [Fix 6] å®šä¹‰ä¸€ä¸ªå¾ªç¯è¶…æ—¶æ—¶é—´
         const auto kLoopTimeout = std::chrono::milliseconds(50);
 
         while (true) {
             EventTask task_to_run;
             std::weak_ptr<void> expired_sub_to_gc;
 
-            // --- 1. Òì²½ÊÂ¼ş (EventTask) ½×¶Î ---
+            // --- 1. å¼‚æ­¥äº‹ä»¶ (EventTask) é˜¶æ®µ ---
             {
                 std::unique_lock<std::mutex> lock(queue_mutex_);
 
-                // [Fix 6] Ê¹ÓÃ wait_for Ìæ´ú wait
+                // [Fix 6] ä½¿ç”¨ wait_for æ›¿ä»£ wait
                 queue_cv_.wait_for(lock, kLoopTimeout, [this] {
-                    // Î½´Ê (predicate) ²»±ä£º
-                    // ½öµ±ÓĞÈÎÎñ»òÍ£Ö¹Ê±²Å¡°Á¢¼´¡±»½ĞÑ
+                    // è°“è¯ (predicate) ä¸å˜ï¼š
+                    // ä»…å½“æœ‰ä»»åŠ¡æˆ–åœæ­¢æ—¶æ‰â€œç«‹å³â€å”¤é†’
                     return !event_queue_.empty() || !running_;
                     });
 
-                // ¼ì²éÍË³öÌõ¼ş
+                // æ£€æŸ¥é€€å‡ºæ¡ä»¶
                 if (!running_ && event_queue_.empty()) {
-                    // Îö¹¹º¯ÊıÒÑ·¢³öÍ£Ö¹ĞÅºÅ£¬
-                    // ²¢ÇÒ¶ÓÁĞÒÑÇå¿Õ£¬
-                    // °²È«ÍË³öÏß³Ì¡£
+                    // ææ„å‡½æ•°å·²å‘å‡ºåœæ­¢ä¿¡å·ï¼Œ
+                    // å¹¶ä¸”é˜Ÿåˆ—å·²æ¸…ç©ºï¼Œ
+                    // å®‰å…¨é€€å‡ºçº¿ç¨‹ã€‚
                     return;
                 }
 
-                // Èç¹ûÊÇ¡°Î½´Ê¡± (ÓĞÈÎÎñ)
-                // »ò¡°³¬Ê±¡±ºó·¢ÏÖÓĞÈÎÎñ
+                // å¦‚æœæ˜¯â€œè°“è¯â€ (æœ‰ä»»åŠ¡)
+                // æˆ–â€œè¶…æ—¶â€åå‘ç°æœ‰ä»»åŠ¡
                 if (!event_queue_.empty()) {
                     task_to_run = std::move(event_queue_.front());
                     event_queue_.pop();
                 }
 
-            }  // ÊÍ·Å queue_mutex_ Ëø
+            }  // é‡Šæ”¾ queue_mutex_ é”
 
-            // 1a. (Èç¹ûÓĞ) Ö´ĞĞÒì²½ÊÂ¼ş
+            // 1a. (å¦‚æœæœ‰) æ‰§è¡Œå¼‚æ­¥äº‹ä»¶
             if (task_to_run) {
                 try {
-                    task_to_run();  // ÔÚ¹¤×÷Ïß³ÌÉÏÖ´ĞĞ»Øµ÷
+                    task_to_run();  // åœ¨å·¥ä½œçº¿ç¨‹ä¸Šæ‰§è¡Œå›è°ƒ
                 }
                 catch (const std::exception& e) {
                     //
@@ -122,97 +123,102 @@ namespace z3y {
                 }
             }
 
-            // --- 2. [Fix 5/6] À¬»ø»ØÊÕ (GC) ½×¶Î ---
+            // --- 2. [Fix 5/6] åƒåœ¾å›æ”¶ (GC) é˜¶æ®µ ---
             //
-            // ... (GC ½×¶Î×¢ÊÍ) ...
+            // ... (GC é˜¶æ®µæ³¨é‡Š) ...
 
-            // 2a. ³¢ÊÔ´Ó GC ¶ÓÁĞÖĞ»ñÈ¡Ò»¸öÊ§Ğ§Ö¸Õë
+            // 2a. å°è¯•ä» GC é˜Ÿåˆ—ä¸­è·å–ä¸€ä¸ªå¤±æ•ˆæŒ‡é’ˆ
             {
                 // gc_queue_
-                // ÓÉ event_mutex_ ±£»¤
+                // ç”± event_mutex_ ä¿æŠ¤
                 std::lock_guard<std::recursive_mutex> lock(event_mutex_);
                 if (!gc_queue_.empty()) {
                     expired_sub_to_gc = gc_queue_.front();
                     gc_queue_.pop();
                 }
-            }  // ÊÍ·Å event_mutex_
+            }  // é‡Šæ”¾ event_mutex_
 
-            // 2b. (Èç¹û»ñÈ¡µ½) Ö´ĞĞÇåÀí
+            // 2b. (å¦‚æœè·å–åˆ°) æ‰§è¡Œæ¸…ç†
             if (!expired_sub_to_gc.owner_before(std::weak_ptr<void>())) {
-                // ÖØĞÂ»ñÈ¡Ëø²¢°²È«µØ
-                // ÇåÀíÁ½¸ö·´Ïò²éÕÒ±í
+                // é‡æ–°è·å–é”å¹¶å®‰å…¨åœ°
+                // æ¸…ç†ä¸¤ä¸ªåå‘æŸ¥æ‰¾è¡¨
                 std::lock_guard<std::recursive_mutex> lock(event_mutex_);
+                // Note: global_sub_lookup_ is std::map
                 global_sub_lookup_.erase(expired_sub_to_gc);
+                // Note: sender_sub_lookup_ is std::map
                 sender_sub_lookup_.erase(expired_sub_to_gc);
             }
         }  // end while(true)
     }
 
 
-    // --- 2. È«¾ÖÊÂ¼ş (Global Events) ---
+    // --- 2. å…¨å±€äº‹ä»¶ (Global Events) ---
 
     /**
-     * @brief [IEventBus ÄÚ²¿ÊµÏÖ] ¶©ÔÄÒ»¸öÈ«¾ÖÊÂ¼ş¡£
+     * @brief [IEventBus å†…éƒ¨å®ç°] è®¢é˜…ä¸€ä¸ªå…¨å±€äº‹ä»¶ã€‚
      *
-     * [ĞŞ¸Ä]
-     * ²ÎÊı 'type'
-     * ÒÑÖØÃüÃûÎª 'event_id'
-     * (ÀàĞÍÒÑ´Ó ClassId
-     * ¸ü¸ÄÎª EventId)¡£
+     * [ä¿®æ”¹]
+     * å‚æ•° 'type'
+     * å·²é‡å‘½åä¸º 'event_id'
+     * (ç±»å‹å·²ä» ClassId
+     * æ›´æ”¹ä¸º EventId)ã€‚
      */
     void PluginManager::SubscribeGlobalImpl(
-        EventId event_id,                       // <-- [ĞŞ¸Ä]
-        std::weak_ptr<void> sub,              // ¶©ÔÄÕß
+        EventId event_id,                       // <-- [ä¿®æ”¹]
+        std::weak_ptr<void> sub,              // è®¢é˜…è€…
         std::function<void(const Event&)> cb,
         ConnectionType connection_type) {
         std::lock_guard<std::recursive_mutex> lock(event_mutex_);
 
-        // 1. Ìí¼Óµ½Ö÷¶©ÔÄÁĞ±í
-        // [ĞŞ¸Ä] Ê¹ÓÃ event_id ×÷Îª¼ü
+        // 1. æ·»åŠ åˆ°ä¸»è®¢é˜…åˆ—è¡¨
+        // [ä¿®æ”¹] ä½¿ç”¨ event_id ä½œä¸ºé”®
+        // Note: global_subscribers_ (EventMap) is now unordered_map.
         global_subscribers_[event_id].push_back(
             { std::move(sub), std::weak_ptr<void>(), std::move(cb),
              connection_type });
 
-        // 2. [Fix 4] Ìí¼Óµ½·´Ïò²éÕÒ±í
-        // [ĞŞ¸Ä] ²åÈë event_id
+        // 2. [Fix 4] æ·»åŠ åˆ°åå‘æŸ¥æ‰¾è¡¨
+        // [ä¿®æ”¹] æ’å…¥ event_id
+        // Note: global_sub_lookup_ is std::map
         global_sub_lookup_[global_subscribers_[event_id].back().subscriber_id]
             .insert(event_id);
     }
 
     /**
-     * @brief [IEventBus ÄÚ²¿ÊµÏÖ] ·¢²¼Ò»¸öÈ«¾ÖÊÂ¼ş¡£
+     * @brief [IEventBus å†…éƒ¨å®ç°] å‘å¸ƒä¸€ä¸ªå…¨å±€äº‹ä»¶ã€‚
      *
-     * ... (Fix 5/6 ÈÕÖ¾) ...
+     * ... (Fix 5/6 æ—¥å¿—) ...
      *
-     * [ĞŞ¸Ä]
-     * ²ÎÊı 'type'
-     * ÒÑÖØÃüÃûÎª 'event_id'
-     * (ÀàĞÍÒÑ´Ó ClassId
-     * ¸ü¸ÄÎª EventId)¡£
+     * [ä¿®æ”¹]
+     * å‚æ•° 'type'
+     * å·²é‡å‘½åä¸º 'event_id'
+     * (ç±»å‹å·²ä» ClassId
+     * æ›´æ”¹ä¸º EventId)ã€‚
      */
     void PluginManager::FireGlobalImpl(EventId event_id,
-        PluginPtr<Event> e_ptr)  // <-- [ĞŞ¸Ä]
+        PluginPtr<Event> e_ptr)  // <-- [ä¿®æ”¹]
     {
         std::vector<std::function<void(const Event&)>> direct_calls;
         std::vector<std::function<void(const Event&)>> queued_calls;
-        // [Fix 6] ÒÆ³ı bool did_gc_queue = false;
+        // [Fix 6] ç§»é™¤ bool did_gc_queue = false;
 
         {
             std::lock_guard<std::recursive_mutex> lock(event_mutex_);
-            // [ĞŞ¸Ä] Ê¹ÓÃ event_id ²éÕÒ
+            // [ä¿®æ”¹] ä½¿ç”¨ event_id æŸ¥æ‰¾
+            // Note: global_subscribers_ (EventMap) is now unordered_map.
             auto it = global_subscribers_.find(event_id);
             if (it == global_subscribers_.end()) {
                 return;
             }
 
-            // [Fix 5] (ºËĞÄ)
-            // ½« gc_queue_ ´«¸øÇåÀíº¯Êı¡£
+            // [Fix 5] (æ ¸å¿ƒ)
+            // å°† gc_queue_ ä¼ ç»™æ¸…ç†å‡½æ•°ã€‚
             CleanupExpiredSubscriptions(it->second, false, gc_queue_);
             // [Fix 6]
-            // (²»ÔÙĞèÒª¼ì²é gc_queue_
-            //  µÄ´óĞ¡»òÉèÖÃ did_gc_queue)
+            // (ä¸å†éœ€è¦æ£€æŸ¥ gc_queue_
+            //  çš„å¤§å°æˆ–è®¾ç½® did_gc_queue)
 
-            // 3. ½«»Øµ÷·ÖÀà
+            // 3. å°†å›è°ƒåˆ†ç±»
             for (const auto& sub : it->second) {
                 if (sub.connection_type == ConnectionType::kDirect) {
                     direct_calls.push_back(sub.callback);
@@ -221,14 +227,14 @@ namespace z3y {
                     queued_calls.push_back(sub.callback);
                 }
             }
-        }  // ÊÍ·Å event_mutex_ Ëø
+        }  // é‡Šæ”¾ event_mutex_ é”
 
-        // 4. [Í¬²½] Á¢¼´ÔÚ·¢²¼ÕßÏß³ÌÉÏÖ´ĞĞ
+        // 4. [åŒæ­¥] ç«‹å³åœ¨å‘å¸ƒè€…çº¿ç¨‹ä¸Šæ‰§è¡Œ
         for (const auto& cb : direct_calls) {
             cb(*e_ptr);
         }
 
-        // 5. [Òì²½] ½« kQueued »Øµ÷ÍÆÈë¶ÓÁĞ
+        // 5. [å¼‚æ­¥] å°† kQueued å›è°ƒæ¨å…¥é˜Ÿåˆ—
         if (!queued_calls.empty()) {
             EventTask task = [e_ptr, queued_calls]() {
                 for (const auto& cb : queued_calls) {
@@ -240,74 +246,78 @@ namespace z3y {
                 std::lock_guard<std::mutex> lock(queue_mutex_);
                 event_queue_.push(std::move(task));
             }
-            queue_cv_.notify_one();  // »½ĞÑÊÂ¼şÑ­»· (´¦Àí EventTask)
+            queue_cv_.notify_one();  // å”¤é†’äº‹ä»¶å¾ªç¯ (å¤„ç† EventTask)
         }
         // [Fix 6]
-        // ÒÆ³ıÁË (else if (did_gc_queue)) ·ÖÖ§£¬
-        // ÒòÎª²»ÔÙĞèÒªËü¡£
+        // ç§»é™¤äº† (else if (did_gc_queue)) åˆ†æ”¯ï¼Œ
+        // å› ä¸ºä¸å†éœ€è¦å®ƒã€‚
     }
 
-    // --- 3. ÊµÀıÊÂ¼ş (Sender-Specific Events) ---
+    // --- 3. å®ä¾‹äº‹ä»¶ (Sender-Specific Events) ---
 
     /**
-     * @brief [IEventBus ÄÚ²¿ÊµÏÖ] ¶©ÔÄÒ»¸öÌØ¶¨·¢ËÍÕßµÄÊÂ¼ş¡£
+     * @brief [IEventBus å†…éƒ¨å®ç°] è®¢é˜…ä¸€ä¸ªç‰¹å®šå‘é€è€…çš„äº‹ä»¶ã€‚
      *
-     * [ĞŞ¸Ä]
-     * ... (Í¬ÉÏ, ÇĞ»»µ½ EventId) ...
+     * [ä¿®æ”¹]
+     * ... (åŒä¸Š, åˆ‡æ¢åˆ° EventId) ...
      */
     void PluginManager::SubscribeToSenderImpl(
         void* sender_key,
-        EventId event_id,  // <-- [ĞŞ¸Ä]
-        std::weak_ptr<void> sub_id,              // ¶©ÔÄÕß
-        std::weak_ptr<void> sender_id,           // ·¢ËÍÕß (ÓÃÓÚÇåÀí)
+        EventId event_id,  // <-- [ä¿®æ”¹]
+        std::weak_ptr<void> sub_id,              // è®¢é˜…è€…
+        std::weak_ptr<void> sender_id,           // å‘é€è€… (ç”¨äºæ¸…ç†)
         std::function<void(const Event&)> cb,
         ConnectionType connection_type) {
         std::lock_guard<std::recursive_mutex> lock(event_mutex_);
 
-        // 1. Ìí¼Óµ½Ö÷¶©ÔÄÁĞ±í
-        // [ĞŞ¸Ä] Ê¹ÓÃ event_id ×÷ÎªÄÚ²¿ map µÄ¼ü
+        // 1. æ·»åŠ åˆ°ä¸»è®¢é˜…åˆ—è¡¨
+        // [ä¿®æ”¹] ä½¿ç”¨ event_id ä½œä¸ºå†…éƒ¨ map çš„é”®
+        // Note: sender_subscribers_ (SenderMap) is now unordered_map.
         sender_subscribers_[sender_key][event_id].push_back(
             { std::move(sub_id), std::move(sender_id), std::move(cb),
              connection_type });
 
-        // 2. [Fix 4] Ìí¼Óµ½·´Ïò²éÕÒ±í
-        // [ĞŞ¸Ä] ²åÈë event_id
+        // 2. [Fix 4] æ·»åŠ åˆ°åå‘æŸ¥æ‰¾è¡¨
+        // [ä¿®æ”¹] æ’å…¥ event_id
+        // Note: sender_sub_lookup_ is std::map
         sender_sub_lookup_
             [sender_subscribers_[sender_key][event_id].back().subscriber_id]
             .insert({ sender_key, event_id });
     }
 
     /**
-     * @brief [IEventBus ÄÚ²¿ÊµÏÖ] ·¢²¼Ò»¸öÌØ¶¨·¢ËÍÕßµÄÊÂ¼ş¡£
+     * @brief [IEventBus å†…éƒ¨å®ç°] å‘å¸ƒä¸€ä¸ªç‰¹å®šå‘é€è€…çš„äº‹ä»¶ã€‚
      *
-     * ... (Fix 6, EventId ĞŞ¸ÄÈÕÖ¾) ...
+     * ... (Fix 6, EventId ä¿®æ”¹æ—¥å¿—) ...
      */
     void PluginManager::FireToSenderImpl(void* sender_key,
-        EventId event_id,  // <-- [ĞŞ¸Ä]
+        EventId event_id,  // <-- [ä¿®æ”¹]
         PluginPtr<Event> e_ptr) {
         std::vector<std::function<void(const Event&)>> direct_calls;
         std::vector<std::function<void(const Event&)>> queued_calls;
-        // [Fix 6] ÒÆ³ı bool did_gc_queue = false;
+        // [Fix 6] ç§»é™¤ bool did_gc_queue = false;
 
         {
             std::lock_guard<std::recursive_mutex> lock(event_mutex_);
+            // Note: sender_subscribers_ (SenderMap) is now unordered_map.
             auto sender_it = sender_subscribers_.find(sender_key);
             if (sender_it == sender_subscribers_.end()) {
                 return;
             }
 
-            // [ĞŞ¸Ä] Ê¹ÓÃ event_id ²éÕÒ
+            // [ä¿®æ”¹] ä½¿ç”¨ event_id æŸ¥æ‰¾
+            // Note: sender_it->second (EventMap) is now unordered_map.
             auto event_it = sender_it->second.find(event_id);
             if (event_it == sender_it->second.end()) {
                 return;
             }
 
-            // [Fix 5] (ºËĞÄ)
-            // ½« gc_queue_ ´«ÈëÇåÀíº¯Êı
+            // [Fix 5] (æ ¸å¿ƒ)
+            // å°† gc_queue_ ä¼ å…¥æ¸…ç†å‡½æ•°
             CleanupExpiredSubscriptions(event_it->second, true, gc_queue_);
-            // [Fix 6] (²»ÔÙĞèÒª did_gc_queue)
+            // [Fix 6] (ä¸å†éœ€è¦ did_gc_queue)
 
-            // ·ÖÀà»Øµ÷
+            // åˆ†ç±»å›è°ƒ
             for (const auto& sub : event_it->second) {
                 if (sub.connection_type == ConnectionType::kDirect) {
                     direct_calls.push_back(sub.callback);
@@ -316,14 +326,14 @@ namespace z3y {
                     queued_calls.push_back(sub.callback);
                 }
             }
-        }  // ÊÍ·Å event_mutex_ Ëø
+        }  // é‡Šæ”¾ event_mutex_ é”
 
-        // 1. [Í¬²½] Á¢¼´ÔÚ·¢²¼ÕßÏß³ÌÉÏÖ´ĞĞ
+        // 1. [åŒæ­¥] ç«‹å³åœ¨å‘å¸ƒè€…çº¿ç¨‹ä¸Šæ‰§è¡Œ
         for (const auto& cb : direct_calls) {
             cb(*e_ptr);
         }
 
-        // 2. [Òì²½] ½«ÈÎÎñÍÆÈë¶ÓÁĞ
+        // 2. [å¼‚æ­¥] å°†ä»»åŠ¡æ¨å…¥é˜Ÿåˆ—
         if (!queued_calls.empty()) {
             EventTask task = [e_ptr, queued_calls]() {
                 for (const auto& cb : queued_calls) {
@@ -335,17 +345,17 @@ namespace z3y {
                 std::lock_guard<std::mutex> lock(queue_mutex_);
                 event_queue_.push(std::move(task));
             }
-            queue_cv_.notify_one();  // »½ĞÑ (´¦Àí EventTask)
+            queue_cv_.notify_one();  // å”¤é†’ (å¤„ç† EventTask)
         }
-        // [Fix 6] ÒÆ³ı (else if (did_gc_queue))
+        // [Fix 6] ç§»é™¤ (else if (did_gc_queue))
     }
 
-    // --- 4. ÊÖ¶¯ÉúÃüÖÜÆÚ¹ÜÀí ---
+    // --- 4. æ‰‹åŠ¨ç”Ÿå‘½å‘¨æœŸç®¡ç† ---
 
     /**
-     * @brief [IEventBus ½Ó¿ÚÊµÏÖ] [¿ÉÑ¡] Á¢¼´È¡Ïû¶©ÔÄÕßËùÓĞµÄ¶©ÔÄ¡£
+     * @brief [IEventBus æ¥å£å®ç°] [å¯é€‰] ç«‹å³å–æ¶ˆè®¢é˜…è€…æ‰€æœ‰çš„è®¢é˜…ã€‚
      *
-     * ... (Fix 4, EventId ĞŞ¸ÄÈÕÖ¾) ...
+     * ... (Fix 4, EventId ä¿®æ”¹æ—¥å¿—) ...
      */
     void PluginManager::Unsubscribe(std::shared_ptr<void> subscriber) {
         std::lock_guard<std::recursive_mutex> lock(event_mutex_);
@@ -358,14 +368,16 @@ namespace z3y {
             };
 
 
-        // --- 3. [Fix 4] ´¦ÀíÈ«¾Ö¶©ÔÄ ---
+        // --- 3. [Fix 4] å¤„ç†å…¨å±€è®¢é˜… ---
+        // Note: global_sub_lookup_ is std::map
         auto global_it = global_sub_lookup_.find(weak_id);
         if (global_it != global_sub_lookup_.end()) {
-            // [ĞŞ¸Ä]
+            // [ä¿®æ”¹]
             // 'type'
             // -> 'event_id'
-            // (ÀàĞÍÒÑ±äÎª EventId)
+            // (ç±»å‹å·²å˜ä¸º EventId)
             for (const EventId& event_id : global_it->second) {
+                // Note: global_subscribers_ (EventMap) is now unordered_map.
                 auto event_list_it = global_subscribers_.find(event_id);
                 if (event_list_it != global_subscribers_.end()) {
                     auto& subs = event_list_it->second;
@@ -374,26 +386,29 @@ namespace z3y {
                         subs.end());
                 }
             }
-            // ´Ó·´Ïò²éÕÒ±íÖĞÒÆ³ı
+            // ä»åå‘æŸ¥æ‰¾è¡¨ä¸­ç§»é™¤
             global_sub_lookup_.erase(global_it);
         }
 
-        // --- 4. [Fix 4] ´¦ÀíÊµÀı¶©ÔÄ ---
+        // --- 4. [Fix 4] å¤„ç†å®ä¾‹è®¢é˜… ---
+        // Note: sender_sub_lookup_ is std::map
         auto sender_it = sender_sub_lookup_.find(weak_id);
         if (sender_it != sender_sub_lookup_.end()) {
-            // [ĞŞ¸Ä]
-            // pair ÀàĞÍÏÖÔÚÊÇ
+            // [ä¿®æ”¹]
+            // pair ç±»å‹ç°åœ¨æ˜¯
             // (void*, EventId)
             for (const auto& pair : sender_it->second) {
                 void* sender_key = pair.first;
-                // [ĞŞ¸Ä]
+                // [ä¿®æ”¹]
                 // 'type'
                 // -> 'event_id'
-                // (ÀàĞÍÒÑ±äÎª EventId)
+                // (ç±»å‹å·²å˜ä¸º EventId)
                 const EventId& event_id = pair.second;
 
+                // Note: sender_subscribers_ (SenderMap) is now unordered_map.
                 auto sender_map_it = sender_subscribers_.find(sender_key);
                 if (sender_map_it != sender_subscribers_.end()) {
+                    // Note: sender_map_it->second (EventMap) is now unordered_map.
                     auto event_list_it = sender_map_it->second.find(event_id);
                     if (event_list_it != sender_map_it->second.end()) {
                         auto& subs = event_list_it->second;
@@ -403,7 +418,7 @@ namespace z3y {
                     }
                 }
             }
-            // ´Ó·´Ïò²éÕÒ±íÖĞÒÆ³ı
+            // ä»åå‘æŸ¥æ‰¾è¡¨ä¸­ç§»é™¤
             sender_sub_lookup_.erase(sender_it);
         }
     }
