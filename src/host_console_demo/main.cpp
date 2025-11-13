@@ -36,6 +36,7 @@
 #include <vector>
 #include <iomanip>
 #include <filesystem>
+#include <map> // 用于 EventTracePoint 映射
 
 #ifdef _WIN32
 #include <Windows.h> // 
@@ -46,15 +47,14 @@
 
 namespace {
 
-    //
-    // 
-    // 
-    // (ResultToString 
-    // 
-    // plugin_exceptions.h 
-    // 
-    // )
-    //
+    // 映射枚举值到可读字符串
+    const std::map<z3y::EventTracePoint, const char*> kTracePointNames = {
+        {z3y::EventTracePoint::kEventFired, "EVENT_FIRED (Published)"},
+        {z3y::EventTracePoint::kDirectCallStart, "DIRECT_CALL (Start)"},
+        {z3y::EventTracePoint::kQueuedEntry, "QUEUED_ENTRY (Enqueued)"},
+        {z3y::EventTracePoint::kQueuedExecuteStart, "QUEUE_EXECUTE (Start)"},
+        {z3y::EventTracePoint::kQueuedExecuteEnd, "QUEUE_EXECUTE (End)"},
+    };
 
     //
     // 
@@ -97,6 +97,15 @@ namespace {
         }
     };
 
+    /**
+     * @brief [修正] 临时事件结构体被移出 main() 函数，以解决 C2246 错误。
+     */
+    struct FakeEvent : public z3y::Event {
+        // 使用 ConstexprHash 确保 EventId 可被 Hook 识别
+        Z3Y_DEFINE_EVENT(FakeEvent, "z3y-event-fake-event-UUID-FFFFFFFF")
+    };
+
+
 }  // 匿名命名空间
 
 
@@ -123,7 +132,28 @@ int main(int argc, char* argv[]) {
       // 1. 创建 PluginManager
         z3y::PluginPtr<z3y::PluginManager> manager = z3y::PluginManager::Create();
 
-        // 2. [!! 修改 !!] 
+        // [!! 核心新增 !!] 
+        // 2. 演示设置事件追踪钩子
+        std::cout << "\n[Host] Setting up Event Trace Hook (Multi-Stage Diagnosis)..." << std::endl;
+        // 修正了函数名和 Lambda 签名，使其匹配新的 EventTraceHook
+        manager->SetEventTraceHook(
+            [](z3y::EventTracePoint point, z3y::EventId event_cls_id, void* event_instance_ptr, const char* info) {
+                // 查找追踪点名称
+                const char* point_name = "UNKNOWN";
+                auto it = kTracePointNames.find(point);
+                if (it != kTracePointNames.end()) {
+                    point_name = it->second;
+                }
+
+                std::cout << "[TRACE] [" << point_name << "]"
+                    << " ID: 0x" << std::hex << std::setw(16) << std::setfill('0') << event_cls_id
+                    << " Ptr: 0x" << event_instance_ptr
+                    << std::dec << " Info: " << info
+                    << std::endl;
+            });
+
+
+        // 3. [!! 修改 !!] 
         // 获取核心服务 (IEventBus) 
         // (
         // 使用新 API
@@ -131,7 +161,7 @@ int main(int argc, char* argv[]) {
         z3y::PluginPtr<z3y::IEventBus> bus =
             manager->GetService<z3y::IEventBus>(z3y::clsid::kEventBus);
 
-        // 3. [演示] 订阅事件
+        // 4. [演示] 订阅事件
         auto logger = std::make_shared<HostLogger>();
         // (
         // 
@@ -149,7 +179,7 @@ int main(int argc, char* argv[]) {
             logger, &HostLogger::OnAsyncException,
             z3y::ConnectionType::kQueued);
 
-        // 4. [演示] 加载插件
+        // 5. [演示] 加载插件
         std::cout << "\n[Host] Loading 'plugin_example' (recursive)..."
             << std::endl;
 
@@ -165,7 +195,7 @@ int main(int argc, char* argv[]) {
             true
         );
 
-        // 5. [演示] [新增] 查询已加载的插件和组件
+        // 6. [演示] [新增] 查询已加载的插件和组件
         std::cout << "\n[Host] Querying loaded plugins and components..."
             << std::endl;
 
@@ -180,7 +210,7 @@ int main(int argc, char* argv[]) {
         // 
         // 
         // )
-        // 5a. 获取 DLL 列表
+        // 6a. 获取 DLL 列表
         std::vector<std::string> loaded_plugins =
             query_service->GetLoadedPluginFiles();
         std::cout << "--- Loaded Plugin Files (" << loaded_plugins.size()
@@ -189,7 +219,7 @@ int main(int argc, char* argv[]) {
             std::cout << "  - " << path << std::endl;
         }
 
-        // 5b. 获取组件列表
+        // 6b. 获取组件列表
         std::vector<z3y::ComponentDetails> components =
             query_service->GetAllComponents();
         std::cout << "--- Registered Components (" << components.size()
@@ -219,9 +249,7 @@ int main(int argc, char* argv[]) {
         }
 
 
-
-
-        // 6. [演示] [!! 
+        // 7. [演示] [!! 
         //    修改 !!] 
         //    获取 "
         //    默认的
@@ -235,7 +263,7 @@ int main(int argc, char* argv[]) {
         logger_service->Log("[Host] Default Logger service acquired successfully.");
 
 
-        // 7. [演示] [!! 
+        // 8. [演示] [!! 
         //    修改 !!] 
         //    获取 "
         //    默认的
@@ -260,7 +288,23 @@ int main(int argc, char* argv[]) {
             << std::endl;
 
 
-        // 9. [演示] 卸载所有插件 (并重置管理器)
+        // 9. [演示] 演示事件监控钩子
+        std::cout << "\n[Host] Demonstrating Event Monitor Hook (Firing a known event and a fake event)..." << std::endl;
+
+        // 9a. 触发一个已知事件 (ComponentRegisterEvent 已被 HostLogger 订阅 -> 会触发 TRACE kDirectCallStart)
+        // 注意: 此事件也会触发 HostLogger::OnComponentRegistered
+        bus->FireGlobal<z3y::event::ComponentRegisterEvent>(
+            z3y::ConstexprHash("DEMO-CLSID-001"), "Demo.Component", "Host.Main", false);
+
+        // 9b. 触发一个假事件 (无人订阅 -> 仅触发 TRACE kEventFired)
+        // FakeEvent 现在已在匿名命名空间中定义。
+        bus->FireGlobal<FakeEvent>();
+
+        // 9c. 触发一个异步事件 (AsyncExceptionEvent 已被 HostLogger 异步订阅 -> 会触发 kQueuedEntry / kQueuedExecuteStart / kQueuedExecuteEnd)
+        bus->FireGlobal<z3y::event::AsyncExceptionEvent>("Demo Async Test");
+
+
+        // 10. [演示] 卸载所有插件 (并重置管理器)
         std::cout << "\n[Host] Unloading all plugins..." << std::endl;
 
         // [!! 崩溃修复 !!]
@@ -287,7 +331,7 @@ int main(int argc, char* argv[]) {
 
         manager->UnloadAllPlugins();
 
-        // 10. [演示] 尝试再次获取服务 (此时应失败)
+        // 11. [演示] 尝试再次获取服务 (此时应失败)
         std::cout << "\n[Host] Re-testing 'Logger.Default' after unload..."
             << std::endl;
 

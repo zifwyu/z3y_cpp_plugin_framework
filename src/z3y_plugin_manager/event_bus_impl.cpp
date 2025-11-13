@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 #include <unordered_map> // [!! 新增 !!] 用于 EventMap/SenderMap 实现
+#include <sstream>     // [!! 修正 !!] 缺少此头文件导致 C2079 错误
 
 namespace z3y {
 
@@ -60,6 +61,50 @@ namespace z3y {
                         return false;
                 }),
             subs.end());
+    }
+
+    // --- [!! 新增 !!] IEventBus 订阅查询接口实现 ---
+
+    /**
+     * @brief [IEventBus 内部实现] 检查是否有全局订阅者。
+     */
+    bool PluginManager::IsGlobalSubscribed(EventId event_id) {
+        std::lock_guard<std::recursive_mutex> lock(event_mutex_);
+
+        // 查找事件ID
+        auto it = global_subscribers_.find(event_id);
+        if (it == global_subscribers_.end()) {
+            return false;
+        }
+
+        // 清理已过期的订阅，并检查剩余数量
+        CleanupExpiredSubscriptions(it->second, false, gc_queue_);
+
+        return !it->second.empty();
+    }
+
+    /**
+     * @brief [IEventBus 内部实现] 检查是否有特定发送者的订阅者。
+     */
+    bool PluginManager::IsSenderSubscribed(void* sender_key, EventId event_id) {
+        std::lock_guard<std::recursive_mutex> lock(event_mutex_);
+
+        // 1. 查找发送者
+        auto sender_it = sender_subscribers_.find(sender_key);
+        if (sender_it == sender_subscribers_.end()) {
+            return false;
+        }
+
+        // 2. 查找事件ID
+        auto event_it = sender_it->second.find(event_id);
+        if (event_it == sender_it->second.end()) {
+            return false;
+        }
+
+        // 清理已过期的订阅，并检查剩余数量
+        CleanupExpiredSubscriptions(event_it->second, true, gc_queue_);
+
+        return !event_it->second.empty();
     }
 
     // --- 1. 事件循环 (Event Loop) ---
@@ -107,6 +152,12 @@ namespace z3y {
 
             // 1a. (如果有) 执行异步事件
             if (task_to_run) {
+                // [!! 新增 !!] 追踪：异步执行开始 (EventTask 不直接暴露事件指针，但这是执行的开始点)
+                // EventTask 是一个 lambda，它在内部捕获了 PluginPtr<Event>
+                if (event_trace_hook_) {
+                    event_trace_hook_(EventTracePoint::kQueuedExecuteStart, 0, nullptr, "Async Task Execution Start");
+                }
+
                 try {
                     task_to_run();  // 在工作线程上执行回调
                 }
@@ -120,6 +171,11 @@ namespace z3y {
                 catch (...) {
                     this->FireGlobal<event::AsyncExceptionEvent>(
                         "Unknown exception in async event loop.");
+                }
+
+                // [!! 新增 !!] 追踪：异步执行结束
+                if (event_trace_hook_) {
+                    event_trace_hook_(EventTracePoint::kQueuedExecuteEnd, 0, nullptr, "Async Task Execution End");
                 }
             }
 
@@ -198,6 +254,13 @@ namespace z3y {
     void PluginManager::FireGlobalImpl(EventId event_id,
         PluginPtr<Event> e_ptr)  // <-- [修改]
     {
+        void* event_ptr = e_ptr.get(); // 获取原始指针用于追踪
+
+        // [!! 新增 !!] 追踪：事件发布开始
+        if (event_trace_hook_) {
+            event_trace_hook_(EventTracePoint::kEventFired, event_id, event_ptr, "Global Event Fired");
+        }
+
         std::vector<std::function<void(const Event&)>> direct_calls;
         std::vector<std::function<void(const Event&)>> queued_calls;
         // [Fix 6] 移除 bool did_gc_queue = false;
@@ -231,12 +294,28 @@ namespace z3y {
 
         // 4. [同步] 立即在发布者线程上执行
         for (const auto& cb : direct_calls) {
+            // [!! 新增 !!] 追踪：同步调用开始
+            if (event_trace_hook_) {
+                event_trace_hook_(EventTracePoint::kDirectCallStart, event_id, event_ptr, "Executing Direct Callback");
+            }
             cb(*e_ptr);
         }
+        // [!! 新增 !!] 追踪：同步调用结束 (可以合并到上一个 Hook, 但分离更有利于调试)
+        // if (event_trace_hook_ && !direct_calls.empty()) {
+        //     event_trace_hook_(EventTracePoint::kDirectCallEnd, event_id, event_ptr, "Finished Direct Calls");
+        // }
+
 
         // 5. [异步] 将 kQueued 回调推入队列
         if (!queued_calls.empty()) {
+
+            // [!! 新增 !!] 追踪：事件推入异步队列
+            if (event_trace_hook_) {
+                event_trace_hook_(EventTracePoint::kQueuedEntry, event_id, event_ptr, "Event Enqueued");
+            }
+
             EventTask task = [e_ptr, queued_calls]() {
+                // e_ptr 被捕获，引用计数增加
                 for (const auto& cb : queued_calls) {
                     cb(*e_ptr);
                 }
@@ -293,6 +372,15 @@ namespace z3y {
     void PluginManager::FireToSenderImpl(void* sender_key,
         EventId event_id,  // <-- [修改]
         PluginPtr<Event> e_ptr) {
+
+        void* event_ptr = e_ptr.get(); // 获取原始指针用于追踪
+        // [!! 新增 !!] 追踪：事件发布开始
+        if (event_trace_hook_) {
+            std::stringstream ss;
+            ss << "Sender Event Fired. Sender Key: 0x" << std::hex << sender_key;
+            event_trace_hook_(EventTracePoint::kEventFired, event_id, event_ptr, ss.str().c_str());
+        }
+
         std::vector<std::function<void(const Event&)>> direct_calls;
         std::vector<std::function<void(const Event&)>> queued_calls;
         // [Fix 6] 移除 bool did_gc_queue = false;
@@ -330,11 +418,25 @@ namespace z3y {
 
         // 1. [同步] 立即在发布者线程上执行
         for (const auto& cb : direct_calls) {
+            // [!! 新增 !!] 追踪：同步调用开始
+            if (event_trace_hook_) {
+                event_trace_hook_(EventTracePoint::kDirectCallStart, event_id, event_ptr, "Executing Sender Direct Callback");
+            }
             cb(*e_ptr);
         }
+        // [!! 新增 !!] 追踪：同步调用结束 (可选)
+        // if (event_trace_hook_ && !direct_calls.empty()) {
+        //     event_trace_hook_(EventTracePoint::kDirectCallEnd, event_id, event_ptr, "Finished Sender Direct Calls");
+        // }
+
 
         // 2. [异步] 将任务推入队列
         if (!queued_calls.empty()) {
+            // [!! 新增 !!] 追踪：事件推入异步队列
+            if (event_trace_hook_) {
+                event_trace_hook_(EventTracePoint::kQueuedEntry, event_id, event_ptr, "Sender Event Enqueued");
+            }
+
             EventTask task = [e_ptr, queued_calls]() {
                 for (const auto& cb : queued_calls) {
                     cb(*e_ptr);

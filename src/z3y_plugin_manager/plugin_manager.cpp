@@ -5,18 +5,6 @@
  * @date 2025-11-10
  *
  * ...
- * 22. [重构] [!!]
- * 新增
- * LoadPluginInternal
- * 的平台无关实现
- * 23. [FIX] [!!]
- * LoadPluginInternal
- * 现在调用
- * PlatformIsPluginFile
- * 来
- * *
- * * * *
- * 文件
  */
 
 #include "plugin_manager.h"
@@ -156,17 +144,16 @@ namespace z3y {
      * @brief 默认构造函数（受保护）。
      */
     PluginManager::PluginManager()
-        : running_(true), current_added_components_(nullptr) {
-    } // [!! 
-     // 修改 !!]
+        : running_(true), current_added_components_(nullptr), event_trace_hook_(nullptr) { // [修改] 初始化 event_trace_hook_
+    }
 
-/**
- * @brief 析构函数。
- * [!!
- * 重构 !!]
- * (
- * * * * )
- */
+    /**
+     * @brief 析构函数。
+     * [!!
+     * 重构 !!]
+     * (
+     * * * * )
+     */
     PluginManager::~PluginManager() {
         // 1. 停止工作线程
         {
@@ -182,6 +169,15 @@ namespace z3y {
         //    重构 !!] 
         //    调用共享的清理函数
         ClearAllRegistries();
+    }
+
+    /**
+     * @brief [!! 新增 !!] 设置事件追踪钩子。
+     */
+    void PluginManager::SetEventTraceHook(std::function<EventTraceHook> hook)
+    {
+        std::lock_guard<std::recursive_mutex> lock(event_mutex_);
+        event_trace_hook_ = std::move(hook);
     }
 
     /**
@@ -219,7 +215,10 @@ namespace z3y {
         current_loading_plugin_path_.clear();
         current_added_components_ = nullptr;
 
-        // [修正] 3. [!! 
+        // [新增] 3. 清理 Hook
+        event_trace_hook_ = nullptr;
+
+        // [修正] 4. [!! 
         //    重构 !!] 
         //    调用平台相关的卸载
         PlatformSpecificLibraryUnload();

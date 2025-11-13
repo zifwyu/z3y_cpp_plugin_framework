@@ -5,18 +5,6 @@
  * @date 2025-11-10
  *
  * ...
- * 18. [修改] [!!] [
- * 重构
- * ]
- * 声明了新的平台抽象层函数
- * (PlatformLoadLibrary
- * 等
- * )
- * 19. [FIX] [!!] [
- * 重构
- * ]
- * 声明了 PlatformIsPluginFile()
- * 以修复加载 Bug
  */
 
 #pragma once
@@ -49,11 +37,21 @@
 #include <thread>
 #include <typeindex>
 #include <vector>
+#include <sstream> // [!! 修正 !!] 
 
 // [新] 引入辅助宏
 #include "framework/component_helpers.h" 
 
 namespace z3y {
+
+    // [!! 新增 !!]
+    enum class EventTracePoint {
+        kEventFired,           //!< 事件被发布
+        kDirectCallStart,      //!< 同步回调执行开始
+        kQueuedEntry,          //!< 事件被推入异步队列
+        kQueuedExecuteStart,   //!< 事件在工作线程中开始执行
+        kQueuedExecuteEnd,     //!< 事件在工作线程中执行结束 (EventTask完成)
+    };
 
     namespace clsid {
         /**
@@ -225,6 +223,24 @@ namespace z3y {
         template <typename T>
         PluginPtr<T> CreateDefaultInstance();
 
+        // --- [!! 新增：事件总线监控 API !!] ---
+
+        /**
+         * @brief [新] 定义事件追踪钩子函数的签名。
+         * @param point 追踪点。
+         * @param event_cls_id 事件类别ID (EventId)。
+         * @param event_instance_ptr 事件实例指针 (用于关联生命周期)。
+         * @param info 可选的额外信息。
+         */
+        using EventTraceHook = void(EventTracePoint point, EventId event_cls_id, void* event_instance_ptr, const char* info);
+
+        /**
+         * @brief [新 API] 设置一个事件追踪钩子。
+         * [修改] 替换了之前的 SetEventMonitorHook
+         * @param hook 用于接收事件生命周期信息的函数。
+         */
+        void SetEventTraceHook(std::function<EventTraceHook> hook);
+
 
     protected:
         /**
@@ -248,6 +264,10 @@ namespace z3y {
 
 // --- IEventBus 接口实现 ---
         void Unsubscribe(std::shared_ptr<void> subscriber) override;
+
+        // [!! 新增 !!] 实现订阅查询接口
+        bool IsGlobalSubscribed(EventId event_id) override;
+        bool IsSenderSubscribed(void* sender_key, EventId event_id) override;
 
         /** @internal */
         void SubscribeGlobalImpl(EventId event_id, std::weak_ptr<void> sub,
@@ -486,6 +506,11 @@ namespace z3y {
         SubscriberLookupMapG global_sub_lookup_;
         // [保留 map] sender_sub_lookup_ 使用 map
         SubscriberLookupMapS sender_sub_lookup_;
+
+        /**
+         * @brief [!! 新增 !!] 事件追踪 Hook。
+         */
+        std::function<EventTraceHook> event_trace_hook_;
 
         // --- 异步事件总线成员 ---
         std::thread event_loop_thread_;

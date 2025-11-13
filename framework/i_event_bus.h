@@ -99,18 +99,26 @@ namespace z3y {
 
         /**
          * @brief [模板] 发布一个全局事件 (广播)。
+         * [!! 修改 !!] 增加 IsGlobalSubscribed 检查，实现条件式创建。
          */
         template <typename TEvent, typename... Args>
         void FireGlobal(Args&&... args) {
             static_assert(std::is_base_of_v<Event, TEvent>,
                 "TEvent must derive from z3y::Event");
 
+            EventId event_id = TEvent::kEventId;
+
+            // [!! 核心优化 !!] 检查是否有订阅者，如果没有则避免构造事件对象
+            if (!IsGlobalSubscribed(event_id)) {
+                return;
+            }
+
             PluginPtr<TEvent> event_ptr =
                 std::make_shared<TEvent>(std::forward<Args>(args)...);
 
             PluginPtr<Event> base_event = event_ptr;
 
-            FireGlobalImpl(TEvent::kEventId, base_event);
+            FireGlobalImpl(event_id, base_event);
         }
 
         // --- 2. 实例到实例 (Sender-Specific) ---
@@ -153,19 +161,27 @@ namespace z3y {
 
         /**
          * @brief [模板] 向订阅了此发送者的订阅者发布事件。
+         * [!! 修改 !!] 增加 IsSenderSubscribed 检查，实现条件式创建。
          */
         template <typename TEvent, typename TSender, typename... Args>
         void FireToSender(std::shared_ptr<TSender> sender, Args&&... args) {
             static_assert(std::is_base_of_v<Event, TEvent>,
                 "TEvent must derive from z3y::Event");
 
+            EventId event_id = TEvent::kEventId;
+            void* sender_key = sender.get();
+
+            // [!! 核心优化 !!] 检查是否有订阅者，如果没有则避免构造事件对象
+            if (!IsSenderSubscribed(sender_key, event_id)) {
+                return;
+            }
+
             PluginPtr<TEvent> event_ptr =
                 std::make_shared<TEvent>(std::forward<Args>(args)...);
 
             PluginPtr<Event> base_event = event_ptr;
-            void* sender_key = sender.get();
 
-            FireToSenderImpl(sender_key, TEvent::kEventId, base_event);
+            FireToSenderImpl(sender_key, event_id, base_event);
         }
 
         // --- 3. 手动生命周期管理 ---
@@ -176,6 +192,17 @@ namespace z3y {
         virtual void Unsubscribe(std::shared_ptr<void> subscriber) = 0;
 
     protected:
+
+        /**
+         * @internal [!! 新增 !!] 检查是否有全局订阅者。
+         */
+        virtual bool IsGlobalSubscribed(EventId event_id) = 0;
+
+        /**
+         * @internal [!! 新增 !!] 检查是否有特定发送者的订阅者。
+         */
+        virtual bool IsSenderSubscribed(void* sender_key, EventId event_id) = 0;
+
         /**
          * @internal
          */
