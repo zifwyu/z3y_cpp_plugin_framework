@@ -53,6 +53,13 @@ namespace z3y {
         kQueuedExecuteEnd,     //!< 事件在工作线程中执行结束 (EventTask完成)
     };
 
+    // [!! 修复：在此处添加类型定义 !!]
+    /**
+     * @brief 事件追踪钩子 (Hook) 的函数签名
+     */
+    using EventTraceHook = std::function<void(
+        EventTracePoint, EventId, void*, const char*)>;
+
     namespace clsid {
         /**
          * @brief [修改]
@@ -89,7 +96,18 @@ namespace z3y {
          */
         Z3Y_DEFINE_COMPONENT_ID("z3y-core-plugin-manager-IMPL-UUID")
 
+    private:
+        // [!! 核心新增 !!] 用于安全的进程唯一单例模式
+        static PluginPtr<PluginManager> s_ActiveInstance;
+        static std::mutex s_InstanceMutex;
+
     public:
+        /**
+         * @brief [!! 新增 !!] 插件或核心模块用于获取当前 PluginManager 实例的入口。
+         * @return 线程安全的 PluginPtr<PluginManager>。
+         */
+        static PluginPtr<PluginManager> GetActiveInstance();
+
         /**
          * @brief [工厂函数] 创建 PluginManager 的一个新实例。
          */
@@ -134,6 +152,16 @@ namespace z3y {
          * @brief 卸载所有已加载的插件。
          */
         void UnloadAllPlugins();
+
+        // [!! 修复：在此处添加函数声明 !!]
+        /**
+         * @brief [!! 新增 !!] 设置一个事件追踪钩子，用于诊断。
+         * @param[in] hook
+         * 一个 std::function,
+         * 匹配 EventTraceHook
+         * 签名。
+         */
+        void SetEventTraceHook(EventTraceHook hook);
 
 
         // --- [!! 
@@ -223,24 +251,6 @@ namespace z3y {
         template <typename T>
         PluginPtr<T> CreateDefaultInstance();
 
-        // --- [!! 新增：事件总线监控 API !!] ---
-
-        /**
-         * @brief [新] 定义事件追踪钩子函数的签名。
-         * @param point 追踪点。
-         * @param event_cls_id 事件类别ID (EventId)。
-         * @param event_instance_ptr 事件实例指针 (用于关联生命周期)。
-         * @param info 可选的额外信息。
-         */
-        using EventTraceHook = void(EventTracePoint point, EventId event_cls_id, void* event_instance_ptr, const char* info);
-
-        /**
-         * @brief [新 API] 设置一个事件追踪钩子。
-         * [修改] 替换了之前的 SetEventMonitorHook
-         * @param hook 用于接收事件生命周期信息的函数。
-         */
-        void SetEventTraceHook(std::function<EventTraceHook> hook);
-
 
     protected:
         /**
@@ -265,8 +275,10 @@ namespace z3y {
 // --- IEventBus 接口实现 ---
         void Unsubscribe(std::shared_ptr<void> subscriber) override;
 
-        // [!! 新增 !!] 实现订阅查询接口
+        // [!! 修复：在此处添加这两个缺失的 override 声明 !!]
+        /** @internal */
         bool IsGlobalSubscribed(EventId event_id) override;
+        /** @internal */
         bool IsSenderSubscribed(void* sender_key, EventId event_id) override;
 
         /** @internal */
@@ -507,11 +519,6 @@ namespace z3y {
         // [保留 map] sender_sub_lookup_ 使用 map
         SubscriberLookupMapS sender_sub_lookup_;
 
-        /**
-         * @brief [!! 新增 !!] 事件追踪 Hook。
-         */
-        std::function<EventTraceHook> event_trace_hook_;
-
         // --- 异步事件总线成员 ---
         std::thread event_loop_thread_;
         std::queue<EventTask> event_queue_;
@@ -520,6 +527,13 @@ namespace z3y {
         bool running_;
 
         std::queue<std::weak_ptr<void>> gc_queue_;
+
+        // [!! 修复：在此处添加成员变量声明 !!]
+        /**
+         * @brief [!! 新增 !!]
+         * 事件追踪钩子
+         */
+        EventTraceHook event_trace_hook_;
     };
 
     // --- [!! 

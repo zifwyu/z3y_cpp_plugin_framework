@@ -15,9 +15,16 @@
  * 打印逻辑
  * 现在显示
  * "is_registered_as_default"
+ * 15. [优化] [!!]
+ * 演示使用 z3y::GetDefaultService
+ * 和 z3y::FireGlobalEvent
+ * 等全局辅助函数，
+ * 简化代码。
  */
 
  // 1. 包含框架核心头文件
+ // z3y_framework.h 
+ // 现在自动包含 z3y_service_locator.h
 #include "framework/z3y_framework.h"
 #include "framework/class_id.h"
 #include "framework/plugin_exceptions.h" // [!! 
@@ -130,6 +137,11 @@ int main(int argc, char* argv[]) {
         // 
 
       // 1. 创建 PluginManager
+      // (
+      // 
+      // 
+      // 
+      // )
         z3y::PluginPtr<z3y::PluginManager> manager = z3y::PluginManager::Create();
 
         // [!! 核心新增 !!] 
@@ -153,15 +165,20 @@ int main(int argc, char* argv[]) {
             });
 
 
-        // 3. [!! 修改 !!] 
-        // 获取核心服务 (IEventBus) 
+        // 3. [!! 优化 !!] 
         // (
-        // 使用新 API
+        // 
+        // 
+        // 
         // )
-        z3y::PluginPtr<z3y::IEventBus> bus =
-            manager->GetService<z3y::IEventBus>(z3y::clsid::kEventBus);
+        // z3y::PluginPtr<z3y::IEventBus> bus =
+        //     manager->GetService<z3y::IEventBus>(z3y::clsid::kEventBus);
+        // (
+        // 
+        // )
 
-        // 4. [演示] 订阅事件
+        // 4. [演示] [!! 优化 !!] 
+        // 使用全局辅助函数订阅
         auto logger = std::make_shared<HostLogger>();
         // (
         // 
@@ -169,13 +186,13 @@ int main(int argc, char* argv[]) {
         // )
         std::cout << "\n[Host] Subscribing to framework events..."
             << std::endl;
-        bus->SubscribeGlobal<z3y::event::PluginLoadSuccessEvent>(
+        z3y::SubscribeGlobalEvent<z3y::event::PluginLoadSuccessEvent>(
             logger, &HostLogger::OnPluginLoaded);
-        bus->SubscribeGlobal<z3y::event::PluginLoadFailureEvent>(
+        z3y::SubscribeGlobalEvent<z3y::event::PluginLoadFailureEvent>(
             logger, &HostLogger::OnPluginFailed);
-        bus->SubscribeGlobal<z3y::event::ComponentRegisterEvent>(
+        z3y::SubscribeGlobalEvent<z3y::event::ComponentRegisterEvent>(
             logger, &HostLogger::OnComponentRegistered);
-        bus->SubscribeGlobal<z3y::event::AsyncExceptionEvent>(
+        z3y::SubscribeGlobalEvent<z3y::event::AsyncExceptionEvent>(
             logger, &HostLogger::OnAsyncException,
             z3y::ConnectionType::kQueued);
 
@@ -199,12 +216,15 @@ int main(int argc, char* argv[]) {
         std::cout << "\n[Host] Querying loaded plugins and components..."
             << std::endl;
 
-        // [!! 修改 !!] 
+        // [!! 优化 !!] 
+        // 
+        // 
+        // 
         // (
-        // 使用新 API
+        // 
         // )
         z3y::PluginPtr<z3y::IPluginQuery> query_service =
-            manager->GetService<z3y::IPluginQuery>(z3y::clsid::kPluginQuery);
+            z3y::GetService<z3y::IPluginQuery>(z3y::clsid::kPluginQuery);
 
         // (
         // 
@@ -250,30 +270,29 @@ int main(int argc, char* argv[]) {
 
 
         // 7. [演示] [!! 
-        //    修改 !!] 
-        //    获取 "
-        //    默认的
-        //    " 
-        //    日志服务
+        //    优化 !!] 
+        //    
+        // 
+        // 
         std::cout << "\n[Host] Getting *Default* Logger service..." << std::endl;
 
         z3y::PluginPtr<z3y::example::ILogger> logger_service =
-            manager->GetDefaultService<z3y::example::ILogger>();
+            z3y::GetDefaultService<z3y::example::ILogger>();
 
         logger_service->Log("[Host] Default Logger service acquired successfully.");
 
 
         // 8. [演示] [!! 
-        //    修改 !!] 
-        //    获取 "
-        //    默认的
-        //    " ISimple 
-        //    实例
+        //    优化 !!] 
+        //    
+        // 
+        // 
+        // 
         std::cout << "\n[Host] Creating *Default* 'ISimple' component instance..."
             << std::endl;
 
         z3y::PluginPtr<z3y::example::ISimple> simple_default =
-            manager->CreateDefaultInstance<z3y::example::ISimple>();
+            z3y::CreateDefaultInstance<z3y::example::ISimple>();
 
         std::cout << "[Host] Default ISimple says: " << simple_default->GetSimpleString()
             << std::endl;
@@ -283,7 +302,7 @@ int main(int argc, char* argv[]) {
         // 
         std::cout << "[Host] Creating 'Simple.B' (by alias) component instance..." << std::endl;
         z3y::PluginPtr<z3y::example::ISimple> simple_b =
-            manager->CreateInstance<z3y::example::ISimple>("Simple.B");
+            z3y::CreateInstance<z3y::example::ISimple>("Simple.B");
         std::cout << "[Host] Simple.B says: " << simple_b->GetSimpleString()
             << std::endl;
 
@@ -291,17 +310,24 @@ int main(int argc, char* argv[]) {
         // 9. [演示] 演示事件监控钩子
         std::cout << "\n[Host] Demonstrating Event Monitor Hook (Firing a known event and a fake event)..." << std::endl;
 
-        // 9a. 触发一个已知事件 (ComponentRegisterEvent 已被 HostLogger 订阅 -> 会触发 TRACE kDirectCallStart)
-        // 注意: 此事件也会触发 HostLogger::OnComponentRegistered
-        bus->FireGlobal<z3y::event::ComponentRegisterEvent>(
+        // 9a. [!! 优化 !!] 
+        // 
+        // 
+        // 
+        z3y::FireGlobalEvent<z3y::event::ComponentRegisterEvent>(
             z3y::ConstexprHash("DEMO-CLSID-001"), "Demo.Component", "Host.Main", false);
 
-        // 9b. 触发一个假事件 (无人订阅 -> 仅触发 TRACE kEventFired)
-        // FakeEvent 现在已在匿名命名空间中定义。
-        bus->FireGlobal<FakeEvent>();
+        // 9b. [!! 优化 !!] 
+        // 
+        // 
+        // FakeEvent 
+        // 
+        z3y::FireGlobalEvent<FakeEvent>();
 
-        // 9c. 触发一个异步事件 (AsyncExceptionEvent 已被 HostLogger 异步订阅 -> 会触发 kQueuedEntry / kQueuedExecuteStart / kQueuedExecuteEnd)
-        bus->FireGlobal<z3y::event::AsyncExceptionEvent>("Demo Async Test");
+        // 9c. [!! 优化 !!] 
+        // 
+        // 
+        z3y::FireGlobalEvent<z3y::event::AsyncExceptionEvent>("Demo Async Test");
 
 
         // 10. [演示] 卸载所有插件 (并重置管理器)
@@ -326,7 +352,7 @@ int main(int argc, char* argv[]) {
         // 
         // 
         // )
-        bus.reset();
+        // bus.reset(); // 
         query_service.reset();
 
         manager->UnloadAllPlugins();
@@ -342,8 +368,8 @@ int main(int argc, char* argv[]) {
             // 
             // 
             z3y::PluginPtr<z3y::example::ILogger> logger_service_2 =
-                manager->GetDefaultService<z3y::example::ILogger>(); // [!! 
-            // 修改 !!]
+                z3y::GetDefaultService<z3y::example::ILogger>(); // [!! 
+            // 优化 !!]
 
 // 
 // 

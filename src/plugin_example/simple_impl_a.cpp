@@ -15,11 +15,18 @@
  * 函数
  * 4. [修改] [!!]
  * 增加自动注册宏
+ * 5. [优化] [!!]
+ * 演示插件使用 z3y::GetDefaultService
+ * 获取其他服务 (
+ * ILogger)
  */
 
 #include "simple_impl_a.h"
 #include "framework/z3y_plugin_sdk.h"
  // 新增 !!]
+ // 
+ // 
+#include "interfaces_example/i_logger.h"
 #include <iostream>
 #include <sstream>
 
@@ -46,7 +53,33 @@ namespace z3y {
         // --- ISimple 接口实现 ---
 
         std::string SimpleImplA::GetSimpleString() {
-            return "Hello from SimpleImplA";
+
+            // [!! 优化演示 !!]
+            // 
+            // 
+            // 
+            // 
+            // 
+            try {
+                // 
+                // 
+                // 
+                // (
+                // 
+                // )
+                auto logger = z3y::GetDefaultService<z3y::example::ILogger>();
+                logger->Log("SimpleImplA::GetSimpleString() was called.");
+            }
+            catch (const z3y::PluginException& e) {
+                // 
+                // 
+                // (
+                // 
+                // )
+                std::cerr << "  [SimpleImplA] Failed to get logger: " << e.what() << std::endl;
+            }
+
+            return "Hello from SimpleImplA (and I just logged a message!)";
         }
 
     }  // namespace example

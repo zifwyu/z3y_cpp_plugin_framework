@@ -45,4 +45,8 @@
 #include "framework/connection_type.h"
 #include "framework/plugin_exceptions.h" 
 
+// 5. [!! 新增 !!] 全局服务定位器 (易用性优化)
+// (允许插件A 轻松调用插件B 提供的服务)
+#include "framework/z3y_service_locator.h"
+
 #endif // Z3Y_PLUGIN_SDK_H_

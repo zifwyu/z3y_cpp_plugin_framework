@@ -38,4 +38,8 @@
                                          // 
                                          // 
 
+// 5. [!! 新增 !!] 全局服务定位器 (易用性优化)
+#include "framework/z3y_service_locator.h"
+
+
 #endif // Z3Y_FRAMEWORK_H_

@@ -72,6 +72,9 @@
     <ClInclude Include="..\..\..\framework\auto_registration.h">
       <Filter>framework</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\framework\z3y_service_locator.h">
+      <Filter>framework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\src\z3y_plugin_manager\readme.txt">

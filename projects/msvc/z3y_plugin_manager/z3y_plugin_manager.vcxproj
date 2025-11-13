@@ -36,6 +36,7 @@
     <ClInclude Include="..\..\..\framework\plugin_registration.h" />
     <ClInclude Include="..\..\..\framework\z3y_framework.h" />
     <ClInclude Include="..\..\..\framework\z3y_plugin_sdk.h" />
+    <ClInclude Include="..\..\..\framework\z3y_service_locator.h" />
     <ClInclude Include="..\..\..\src\z3y_plugin_manager\plugin_manager.h" />
   </ItemGroup>
   <ItemGroup>

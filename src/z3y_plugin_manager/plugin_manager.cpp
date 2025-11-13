@@ -5,6 +5,18 @@
  * @date 2025-11-10
  *
  * ...
+ * 22. [重构] [!!]
+ * 新增
+ * LoadPluginInternal
+ * 的平台无关实现
+ * 23. [FIX] [!!]
+ * LoadPluginInternal
+ * 现在调用
+ * PlatformIsPluginFile
+ * 来
+ * *
+ * * * *
+ * 文件
  */
 
 #include "plugin_manager.h"
@@ -33,6 +45,20 @@
 
 namespace z3y {
 
+    // --- 在文件顶部初始化静态成员 ---
+    PluginPtr<PluginManager> PluginManager::s_ActiveInstance = nullptr;
+    std::mutex PluginManager::s_InstanceMutex;
+
+    // --- 实现 GetActiveInstance() ---
+    /**
+     * @brief [!! 进程唯一化 !!] 插件或核心模块用于获取当前 PluginManager 实例的入口。
+     */
+    PluginPtr<PluginManager> PluginManager::GetActiveInstance() {
+        std::lock_guard<std::mutex> lock(s_InstanceMutex);
+        return s_ActiveInstance;
+    }
+
+
     // [!! 
     // 重构 !!] 
     // 
@@ -54,28 +80,38 @@ namespace z3y {
         PluginPtr<PluginManager> manager =
             std::make_shared<MakeSharedEnabler>();
 
-        std::weak_ptr<PluginManager> weak_manager = manager;
+        // 1. [!! 核心操作 !!] 注册为活动的单例实例 (必须在注册核心服务前完成)
+        {
+            std::lock_guard<std::mutex> lock(s_InstanceMutex);
+            // 强制进程单例规则
+            if (s_ActiveInstance) {
+                // 抛出异常，强制执行“一个进程只允许一个活动的 PluginManager”规则
+                throw std::runtime_error("Attempted to set a second active PluginManager instance. Use a single instance per process/container.");
+            }
+            s_ActiveInstance = manager;
+        }
 
-        auto factory = [weak_manager]() -> PluginPtr<IComponent> {
-            if (auto strong_manager = weak_manager.lock()) {
-                // (
-                // 
-                // 
-                // )
+
+        // [!! 修正 !!] 使用新的 GetActiveInstance() 工厂
+        // 这种工厂模式保证了所有核心服务都指向同一个 PluginManager 实例
+        auto factory = []() -> PluginPtr<IComponent> {
+            // 在这里调用 GetActiveInstance 是安全的，因为 s_ActiveInstance 刚刚被设置
+            if (auto strong_manager = PluginManager::GetActiveInstance()) {
                 InstanceError dummy_error;
                 return PluginCast<IComponent>(strong_manager, dummy_error);
             }
             return nullptr;
             };
 
+
         // [修改] 
         // 调用 GetInterfaceDetails()
         auto iids = PluginManager::GetInterfaceDetails();
 
-        // 1. [修改] 注册 IEventBus 服务
+        // 2. [修改] 注册 IEventBus 服务
         manager->RegisterComponent(
             clsid::kEventBus,  // 使用 IEventBus 的服务 ID
-            factory,
+            factory, // [修正] 使用统一的 factory
             true, "z3y.core.eventbus", iids,
             true // [!! 
                  // 修复 !!] 
@@ -87,10 +123,10 @@ namespace z3y {
                  // 
         );
 
-        // 2. [新增] 注册 IPluginQuery 服务
+        // 3. [新增] 注册 IPluginQuery 服务
         manager->RegisterComponent(
             clsid::kPluginQuery,      // 使用 IPluginQuery 的服务 ID
-            factory,
+            factory, // [修正] 使用统一的 factory
             true, "z3y.core.pluginquery", iids,
             false // [!! 
                   // 修复 !!] 
@@ -101,11 +137,11 @@ namespace z3y {
                   // 
         );
 
-        // 3. [可选] 注册 PluginManager "实现" 本身
+        // 4. [可选] 注册 PluginManager "实现" 本身
         manager->RegisterComponent(
             PluginManager::kClsid,  // [修改] 
             // 使用 kClsid
-            std::move(factory),
+            factory, // [修正] 使用统一的 factory
             true, "z3y.core.manager", iids,
             false // 
                   // 
@@ -113,16 +149,16 @@ namespace z3y {
         );
 
 
-        // 4. [修正]：
+        // 5. [修正]：
         // 启动事件循环工作线程
         manager->event_loop_thread_ =
             std::thread(&PluginManager::EventLoop, manager.get());
 
-        // 5. 获取 IEventBus 接口 (现在使用自己的ID)
+        // 6. 获取 IEventBus 接口 (现在使用自己的ID)
         try {
             auto bus = manager->GetService<IEventBus>(clsid::kEventBus);
 
-            // 6. [修正]：使用正确的模板语法
+            // 7. [修正]：使用正确的模板语法
             if (bus) {
                 bus->FireGlobal<event::ComponentRegisterEvent>(
                     clsid::kEventBus, "z3y.core.eventbus", "internal.core",
@@ -165,7 +201,16 @@ namespace z3y {
             event_loop_thread_.join();
         }
 
-        // 2. [!! 
+        // 2. [!! 核心操作 !!] 清除静态实例指针
+        // 必须在析构时清除指针，以允许新的实例被创建 (如果宿主需要)
+        {
+            std::lock_guard<std::mutex> lock(s_InstanceMutex);
+            if (s_ActiveInstance.get() == this) {
+                s_ActiveInstance.reset();
+            }
+        }
+
+        // 3. [!! 
         //    重构 !!] 
         //    调用共享的清理函数
         ClearAllRegistries();
@@ -174,7 +219,9 @@ namespace z3y {
     /**
      * @brief [!! 新增 !!] 设置事件追踪钩子。
      */
-    void PluginManager::SetEventTraceHook(std::function<EventTraceHook> hook)
+     // [!! 修复 !!] 签名必须与 .h 文件中的声明匹配
+     // 移除多余的 std::function<> 包装
+    void PluginManager::SetEventTraceHook(EventTraceHook hook)
     {
         std::lock_guard<std::recursive_mutex> lock(event_mutex_);
         event_trace_hook_ = std::move(hook);
@@ -337,14 +384,12 @@ namespace z3y {
             }
 
             // [FIX] [修改]
-            // (已完成)
             if (running_) {
-                // (
-                // 
-                // 
-                // )
-                InstanceError dummy_error;
-                bus = PluginCast<IEventBus>(shared_from_this(), dummy_error);
+                // [修正] 依赖 GetActiveInstance() 获取最新的 manager 实例
+                if (auto manager = GetActiveInstance()) {
+                    InstanceError dummy_error;
+                    bus = PluginCast<IEventBus>(manager, dummy_error);
+                }
             }
         }
 
@@ -460,7 +505,11 @@ namespace z3y {
 
         PluginPtr<IEventBus> bus;
         try {
-            bus = GetService<IEventBus>(clsid::kEventBus);
+            // [修正] 依赖 GetActiveInstance()
+            auto manager = GetActiveInstance();
+            if (manager) {
+                bus = manager->GetService<IEventBus>(clsid::kEventBus);
+            }
         }
         catch (const PluginException&) {
             /* 在加载早期阶段 bus

@@ -99,7 +99,7 @@ namespace z3y {
 
         /**
          * @brief [模板] 发布一个全局事件 (广播)。
-         * [!! 修改 !!] 增加 IsGlobalSubscribed 检查，实现条件式创建。
+         * [!! 优化 !!] 增加 IsGlobalSubscribed 检查，实现条件式创建。
          */
         template <typename TEvent, typename... Args>
         void FireGlobal(Args&&... args) {
@@ -161,7 +161,7 @@ namespace z3y {
 
         /**
          * @brief [模板] 向订阅了此发送者的订阅者发布事件。
-         * [!! 修改 !!] 增加 IsSenderSubscribed 检查，实现条件式创建。
+         * [!! 优化 !!] 增加 IsSenderSubscribed 检查，实现条件式创建。
          */
         template <typename TEvent, typename TSender, typename... Args>
         void FireToSender(std::shared_ptr<TSender> sender, Args&&... args) {
