@@ -66,6 +66,9 @@
     <ClInclude Include="..\..\..\framework\event_helpers.h">
       <Filter>framework</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\framework\plugin_exceptions.h">
+      <Filter>framework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\src\z3y_plugin_manager\readme.txt">

@@ -30,6 +30,7 @@
     <ClInclude Include="..\..\..\framework\i_plugin_query.h" />
     <ClInclude Include="..\..\..\framework\i_plugin_registry.h" />
     <ClInclude Include="..\..\..\framework\plugin_cast.h" />
+    <ClInclude Include="..\..\..\framework\plugin_exceptions.h" />
     <ClInclude Include="..\..\..\framework\plugin_impl.h" />
     <ClInclude Include="..\..\..\framework\plugin_registration.h" />
     <ClInclude Include="..\..\..\framework\z3y_framework.h" />

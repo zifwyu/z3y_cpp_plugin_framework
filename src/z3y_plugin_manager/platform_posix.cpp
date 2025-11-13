@@ -5,10 +5,22 @@
  * @date 2025-11-10
  *
  * ...
- * [修改]
  * 8. [FIX] [!!]
  * 更改 clsid::kPluginManager
  * 为 PluginManager::kClsid
+ * 9. [FIX] [!!]
+ * 修正了
+ * UnloadAllPlugins
+ * 中
+ * factory
+ * lambda
+ * 对
+ * PluginCast
+ * 的调用
+ * 10. [FIX] [!!]
+ * 恢复了意外删除的
+ * namespace
+ * 结尾括号
  */
 
  // 仅在非 Windows 平台上编译此文件
@@ -111,7 +123,22 @@ namespace z3y {
             return false;
         }
 
-        PluginPtr<IEventBus> bus = GetService<IEventBus>(clsid::kEventBus);
+        PluginPtr<IEventBus> bus;
+        // [!! 
+        // 修复 !!] 
+        // (
+        // 
+        // )
+        try {
+            bus = GetService<IEventBus>(clsid::kEventBus);
+        }
+        catch (const PluginException&) {
+            /* 在加载早期阶段 bus
+            可能不存在，
+            忽略
+            */
+        }
+
         std::string path_str = file_path.string();
 
         // 2. [原逻辑] 加载库
@@ -198,7 +225,13 @@ namespace z3y {
 
         auto factory = [weak_this_ptr]() -> PluginPtr<IComponent> {
             if (auto this_ptr = weak_this_ptr.lock()) {
-                return PluginCast<IComponent>(this_ptr);
+                // [!! 
+                // 修复 !!] 
+                // (
+                // 
+                // )
+                InstanceError dummy_error;
+                return PluginCast<IComponent>(this_ptr, dummy_error);
             }
             return nullptr;
             };
@@ -261,14 +294,24 @@ namespace z3y {
         );
 
         // 7. (可选) 触发一个事件，通知系统已重置
-        auto bus = GetService<IEventBus>(clsid::kEventBus);
-        if (bus) {
-            bus->FireGlobal<event::ComponentRegisterEvent>(
-                clsid::kEventBus, "z3y.core.eventbus", "internal.core",
-                true);
+        try {
+            auto bus = GetService<IEventBus>(clsid::kEventBus);
+            if (bus) {
+                bus->FireGlobal<event::ComponentRegisterEvent>(
+                    clsid::kEventBus, "z3y.core.eventbus", "internal.core",
+                    true);
+            }
+        }
+        catch (const PluginException&) {
+            // 
+            // 
+            // 
         }
     }
 
-}  // namespace z3y
+}  // [!! 
+   // 修复 !!] 
+   // 恢复了此括号
+   // namespace z3y
 
 #endif  // !defined(_WIN32)

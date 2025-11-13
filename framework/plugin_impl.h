@@ -5,29 +5,12 @@
  * @date 2025-11-10
  *
  * ...
- * [修改]
- * ...
- * 9. [修改] [!!]
- * QueryInterfaceRaw
- * 和 QueryRecursive
- * 已更新为
- * (iid, major, minor)
- * 签名
- * 10. [修改] [!!]
+ * 12. [修改] [!!]
  * QueryRecursive
- * 实现了 SemVer
- * 检查逻辑
- * (plugin_major == host_major &&
- * plugin_minor >= host_minor)
- * 11. [修改] [!!]
- * GetInterfaceDetails
- * 和
- * CollectDetailsRecursive
- * 现在收集版本号
- * (
- * 使用 InterfaceVersion
- * 结构体
- * )。
+ * 和 QueryInterfaceRaw
+ * 现在接受并设置
+ * InstanceError&
+ * out_result
  */
 
 #pragma once
@@ -38,6 +21,8 @@
 #include "framework/i_component.h"  // 依赖 z3y::IComponent
 #include "framework/class_id.h"     // 依赖 z3y::ClassId
 #include "framework/i_plugin_query.h" // [新] 依赖 InterfaceDetails
+#include "framework/plugin_exceptions.h"     // [!! 
+ // 新增 !!]
 #include <type_traits>    // 依赖 std::is_base_of_v (C++17)
 #include <memory>         // 依赖 std::enable_shared_from_this
 #include <vector>         // [新增]
@@ -151,69 +136,49 @@ namespace z3y {
          * 的核心实现。
          * [修改]
          * 增加了 SemVer
-         * 检查逻辑。
-         *
-         * @param[in] iid
-         * 宿主想要的接口 ID。
-         * @param[in] host_major
-         * 宿主想要的 Major
-         * 版本。
-         * @param[in] host_minor
-         * 宿主想要的 Minor
-         * 版本。
+         * 检查逻辑并设置
+         * out_result
+         * 。
          */
         template <typename First, typename... Rest>
         void* QueryRecursive(InterfaceId iid, uint32_t host_major,
-            uint32_t host_minor) {
+            uint32_t host_minor, InstanceError& out_result) { // [!! 
+            // 修改 !!]
 
             if (iid == First::kIid) {
-                // [!! 
-                // 
-                // 
-                // 
-                // 
-                // !!]
+
                 const uint32_t my_major = First::kVersionMajor;
                 const uint32_t my_minor = First::kVersionMinor;
 
                 // 1. 
-                //    
-                // 
-                //    
-                //    
-                //    (
-                //    宿主 2.0 
-                //    vs 
-                //    插件 1.x)
+                //    主版本不匹配
                 if (my_major != host_major) {
-                    return nullptr; // 
-                    // 
-                    // 
-                    // 
+                    out_result = InstanceError::kErrorVersionMajorMismatch; // [!! 
+                    // 修改 !!]
+                    return nullptr;
                 }
 
                 // 2. 
-                //    
-                // 
-                //    
-                //    
-                //    (
-                //    宿主 1.2 
-                //    vs 
-                //    插件 1.1)
+                //    次版本过低
                 if (my_minor < host_minor) {
-                    return nullptr; // 
-
+                    out_result = InstanceError::kErrorVersionMinorTooLow; // [!! 
+                    // 修改 !!]
+                    return nullptr;
                 }
 
-
+                // 
+                // 成功
+                out_result = InstanceError::kSuccess; // [!! 
+                // 修改 !!]
                 return static_cast<First*>(static_cast<ImplClass*>(this));
             }
 
             if constexpr (sizeof...(Rest) > 0) {
-                return QueryRecursive<Rest...>(iid, host_major, host_minor);
+                return QueryRecursive<Rest...>(iid, host_major, host_minor, out_result);
             }
 
+            out_result = InstanceError::kErrorInterfaceNotImpl; // [!! 
+            // 修改 !!]
             return nullptr;  // 遍历完毕，未找到
         }
 
@@ -225,8 +190,9 @@ namespace z3y {
         static void CollectDetailsRecursive(
             std::vector<InterfaceDetails>& details) {
 
-            // [!! 修改 !!] 
-            // 填充 InterfaceVersion 结构体
+            // (
+            // 上一轮已修改
+            // )
             details.push_back(InterfaceDetails{
                 First::kIid,
                 First::kName,
@@ -246,38 +212,52 @@ namespace z3y {
          * @brief 自动实现的
          * IComponent::QueryInterfaceRaw()
          * 虚函数。
-         *
-         * @param[in] iid
-         * 要查询的接口 ID。
+         * [!!
+         * 修改 !!]
+         * 更新签名
          */
         void* QueryInterfaceRaw(InterfaceId iid, uint32_t major,
-            uint32_t minor) override { // [修改]
+            uint32_t minor, InstanceError& out_result) override { // [!! 
+            // 修改 !!]
 
             [[maybe_unused]] constexpr bool check_clsid = CheckHasClsid();
             [[maybe_unused]] constexpr bool check_iids =
                 AllDeriveFromIComponent<Interfaces...>();
 
+            // 
+            // 检查 IComponent 
+            // 自身
             if (iid == IComponent::kIid) {
-
                 const uint32_t my_major = IComponent::kVersionMajor;
                 const uint32_t my_minor = IComponent::kVersionMinor;
 
-
                 if (my_major != major) {
+                    out_result = InstanceError::kErrorVersionMajorMismatch; // [!! 
+                    // 修改 !!]
                     return nullptr;
                 }
                 if (my_minor < minor) {
+                    out_result = InstanceError::kErrorVersionMinorTooLow; // [!! 
+                    // 修改 !!]
                     return nullptr;
                 }
 
+                out_result = InstanceError::kSuccess; // [!! 
+                // 修改 !!]
                 return static_cast<IComponent*>(
                     static_cast<ImplClass*>(this));
             }
 
+            // 
+            // 递归检查其他接口
             if constexpr (sizeof...(Interfaces) > 0) {
-                return QueryRecursive<Interfaces...>(iid, major, minor);
+                return QueryRecursive<Interfaces...>(iid, major, minor, out_result);
             }
 
+            // 
+            // 未实现
+            out_result = InstanceError::kErrorInterfaceNotImpl; // [!! 
+            // 修改 !!]
             return nullptr;
         }
 
@@ -294,8 +274,9 @@ namespace z3y {
 
             std::vector<InterfaceDetails> details;
 
-            // [!! 修改 !!] 
-            // 添加 IComponent 自身 (包含版本)
+            // (
+            // 上一轮已修改
+            // )
             details.push_back(
                 InterfaceDetails{
                     IComponent::kIid,

@@ -5,25 +5,19 @@
  * @date 2025-11-10
  *
  * ...
- * [修改]
- * 6. [FIX]
- * 移除 Shutdown()，
- * 逻辑已移至析构函数 (
- * 已完成)
- * 7. [新]
- * 实现 GetComponentDetailsByAlias (
- * 已完成)
- * 8. [修改]
- * 核心注册和查询逻辑更新为使用
- * InterfaceDetails
- * 9. [修改]
- * Create()
- * 函数使用 Z3Y_DEFINE_COMPONENT_ID
- * 的 kClsid
  * 10. [修改]
  * FindComponentsImplementing
  * 以搜索
  * vector<InterfaceDetails>
+ * 11. [FIX] [!!]
+ * 修正了
+ * Create()
+ * 和 RegisterComponent()
+ * 中对
+ * PluginCast
+ * 的内部调用，
+ * 以匹配 2
+ * 参数签名。
  */
 
 #include "plugin_manager.h"
@@ -57,7 +51,17 @@ namespace z3y {
 
         auto factory = [weak_manager]() -> PluginPtr<IComponent> {
             if (auto strong_manager = weak_manager.lock()) {
-                return PluginCast<IComponent>(strong_manager);
+                // [!! 
+                // 修复 !!] 
+                // (
+                // 
+                // )
+                // 
+                // 
+                // 
+                // 
+                InstanceError dummy_error;
+                return PluginCast<IComponent>(strong_manager, dummy_error);
             }
             return nullptr;
             };
@@ -92,13 +96,22 @@ namespace z3y {
             std::thread(&PluginManager::EventLoop, manager.get());
 
         // 5. 获取 IEventBus 接口 (现在使用自己的ID)
-        auto bus = manager->GetService<IEventBus>(clsid::kEventBus);
+        try {
+            auto bus = manager->GetService<IEventBus>(clsid::kEventBus);
 
-        // 6. [修正]：使用正确的模板语法
-        if (bus) {
-            bus->FireGlobal<event::ComponentRegisterEvent>(
-                clsid::kEventBus, "z3y.core.eventbus", "internal.core",
-                true);
+            // 6. [修正]：使用正确的模板语法
+            if (bus) {
+                bus->FireGlobal<event::ComponentRegisterEvent>(
+                    clsid::kEventBus, "z3y.core.eventbus", "internal.core",
+                    true);
+            }
+        }
+        catch (const PluginException&) {
+            // 
+            // 
+            // 
+            // 
+            // 
         }
 
         return manager;
@@ -211,7 +224,13 @@ namespace z3y {
             // [FIX] [修改]
             // (已完成)
             if (running_) {
-                bus = PluginCast<IEventBus>(shared_from_this());
+                // [!! 
+                // 修复 !!] 
+                // (
+                // 
+                // )
+                InstanceError dummy_error;
+                bus = PluginCast<IEventBus>(shared_from_this(), dummy_error);
             }
         }
 

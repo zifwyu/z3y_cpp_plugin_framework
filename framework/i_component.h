@@ -5,16 +5,14 @@
  * @date 2025-11-10
  *
  * [修改]
- * 1.
- * 遵从 Google 命名约定
- * 2.
- * 使用 Z3Y_DEFINE_INTERFACE
- * 宏 (
- * 版本 1.0)
- * 3. [修改]
+ * ...
+ * 4. [修改] [!!]
  * QueryInterfaceRaw
- * 签名已更改为接受 (iid, major,
- * minor)
+ * 签名已更改为接受
+ * InstanceError&
+ * out_result (
+ * 替换 GetInstanceResult
+ * )
  */
 
 #pragma once
@@ -24,13 +22,15 @@
 
 #include "framework/class_id.h"
 #include "framework/interface_helpers.h" // [新]
+#include "framework/plugin_exceptions.h" // [!! 
+ // 新增 !!]
 #include <memory>
 #include <typeindex>
 
 namespace z3y {
     /**
      * @typedef PluginPtr
-     * @brief 框架中用于管理所有插件对象生命周期的标准智能指针。
+     * @brief 框架中用于管理所有插件生命周期的标准智能指针。
      */
     template <typename T>
     using PluginPtr = std::shared_ptr<T>;
@@ -60,14 +60,14 @@ namespace z3y {
         /**
          * @brief [核心] 手动运行时类型识别（RTTI）的查询函数（纯虚函数）。
          *
-         * [修改]
+         * [修改] [!!]
          * 签名已更改，
-         * 以接受 Major
-         * 和 Minor
-         * 版本号
+         * 增加 InstanceError&
+         * 以便传回详细的失败原因。
          */
         virtual void* QueryInterfaceRaw(InterfaceId iid, uint32_t major,
-            uint32_t minor) = 0;
+            uint32_t minor, InstanceError& out_result) = 0; // [!! 
+        // 修改 !!]
     };
 
 
