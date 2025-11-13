@@ -132,93 +132,16 @@ namespace z3y {
      */
 
 
-     /**
-      * @brief 卸载所有已加载的插件并清空所有注册表。
-      * (POSIX 平台实现)
-      * [!!
-      * 重构 !!]
-      */
-    void PluginManager::UnloadAllPlugins() {
-        // 1. [!! 
-        //    重构 !!] 
-        //    调用共享的核心清理函数
-        ClearAllRegistries();
+     // [!! 
+     // 修复 B.1 !!] 
+     // 
+     // UnloadAllPlugins() 
+     // 的平台无关实现
+     // * 已移至
+     // plugin_manager.cpp
+     // *
+     // 
 
-        // --- 
-        // 
-        // 
-        // ---
-        std::weak_ptr<PluginManager> weak_this_ptr =
-            std::static_pointer_cast<PluginManager>(shared_from_this());
-
-        auto factory = [weak_this_ptr]() -> PluginPtr<IComponent> {
-            if (auto this_ptr = weak_this_ptr.lock()) {
-                // (
-                // 
-                // 
-                // )
-                InstanceError dummy_error;
-                return PluginCast<IComponent>(this_ptr, dummy_error);
-            }
-            return nullptr;
-            };
-
-        // (已在上一轮修复)
-        auto iids = PluginManager::GetInterfaceDetails();
-
-        {
-            // [Fix 2] (安全修复):
-            // [!! 
-            // 
-            // !!] 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-            // 
-        }
-
-        // 6. 在锁外重新引导核心服务 (IEventBus / IPluginQuery)
-        RegisterComponent(
-            clsid::kEventBus, factory,
-            true /* is_singleton */, "z3y.core.eventbus" /* alias */,
-            iids,
-            true // [!! 
-                 // 修复 !!]
-        );
-        RegisterComponent(
-            clsid::kPluginQuery, factory,
-            true /* is_singleton */, "z3y.core.pluginquery" /* alias */,
-            iids,
-            false // [!! 
-                  // 修复 !!]
-        );
-        RegisterComponent(
-            PluginManager::kClsid, std::move(factory),  // [修改] 
-            // 使用 PluginManager::kClsid
-            true /* is_singleton */, "z3y.core.manager" /* alias */,
-            iids,
-            false // [!! 
-                  // 新增 !!]
-        );
-
-        // 7. (可选) 触发一个事件，通知系统已重置
-        try {
-            auto bus = GetService<IEventBus>(clsid::kEventBus);
-            if (bus) {
-                bus->FireGlobal<event::ComponentRegisterEvent>(
-                    clsid::kEventBus, "z3y.core.eventbus", "internal.core",
-                    true);
-            }
-        }
-        catch (const PluginException&) {
-            // 
-            // 
-            // 
-        }
-    }
 
     /**
      * @brief [!!

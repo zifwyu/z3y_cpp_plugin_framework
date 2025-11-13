@@ -192,9 +192,18 @@ int main(int argc, char* argv[]) {
             logger, &HostLogger::OnPluginFailed);
         z3y::SubscribeGlobalEvent<z3y::event::ComponentRegisterEvent>(
             logger, &HostLogger::OnComponentRegistered);
+
+        // [!! 修复 A.2 !!]
+        // 异步异常事件*必须*使用 kDirect 
+        // (同步) 
+        // 连接，
+        // 否则如果异常处理程序*自己*也抛出异常，
+        // 将导致无限的异步异常循环。
         z3y::SubscribeGlobalEvent<z3y::event::AsyncExceptionEvent>(
             logger, &HostLogger::OnAsyncException,
-            z3y::ConnectionType::kQueued);
+            z3y::ConnectionType::kDirect // [!! 
+            // 修复 A.2 !!]
+        );
 
         // 5. [演示] 加载插件
         std::cout << "\n[Host] Loading 'plugin_example' (recursive)..."
